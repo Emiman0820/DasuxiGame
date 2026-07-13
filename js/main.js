@@ -1,8 +1,7 @@
 import {
     signInAnonymously,
     onAuthStateChanged
-  } from
-    "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+  } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
   
   import {
     auth
@@ -27,12 +26,13 @@ import {
     try {
       await signInAnonymously(auth);
     } catch (error) {
-      console.error(error);
+      console.error("匿名ログインエラー:", error);
   
       connectionStatus.textContent =
         "Firebaseへの接続に失敗しました";
   
-      message.textContent = error.message;
+      message.textContent =
+        "接続に失敗しました。しばらくしてから再度お試しください。";
     }
   }
   
