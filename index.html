@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
+
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1.0"
@@ -14,43 +15,83 @@
 
 <body>
   <main class="container">
-    <h1>Dasuxi ONLINE</h1>
 
-    <p id="connectionStatus">
-      Firebaseに接続中...
-    </p>
+    <!-- 部屋作成・参加画面 -->
+    <section id="homeScreen">
+      <h1>Dasuxi ONLINE</h1>
 
-    <section class="player-section">
-      <label for="playerName">
-        プレイヤー名
-      </label>
+      <p id="connectionStatus">
+        Firebaseに接続中...
+      </p>
 
-      <input
-        id="playerName"
-        type="text"
-        maxlength="12"
-        placeholder="名前を入力"
-      >
+      <section class="player-section">
+        <label for="playerName">
+          プレイヤー名
+        </label>
+
+        <input
+          id="playerName"
+          type="text"
+          maxlength="12"
+          placeholder="名前を入力"
+        >
+      </section>
+
+      <section class="create-room-section">
+        <h2>部屋を作る</h2>
+
+        <label for="maxPlayers">
+          対戦人数
+        </label>
+
+        <select id="maxPlayers">
+          <option value="2">2人</option>
+          <option value="3">3人</option>
+          <option value="4">4人</option>
+        </select>
+
+        <button id="createRoomButton">
+          部屋を作る
+        </button>
+      </section>
+
+      <section class="join-room-section">
+        <h2>部屋に入る</h2>
+
+        <input
+          id="roomIdInput"
+          type="text"
+          maxlength="6"
+          placeholder="ルームID"
+        >
+
+        <button id="joinRoomButton">
+          部屋に入る
+        </button>
+      </section>
+
+      <p id="message"></p>
     </section>
 
-    <section class="room-section">
-      <button id="createRoomButton">
-        部屋を作る
-      </button>
+    <!-- 待機ルーム画面 -->
+    <section id="waitingRoomScreen" class="hidden">
+      <h1>待機ルーム</h1>
 
-      <input
-        id="roomIdInput"
-        type="text"
-        maxlength="6"
-        placeholder="ルームID"
-      >
+      <p>
+        ルームID
+      </p>
 
-      <button id="joinRoomButton">
-        部屋に入る
-      </button>
+      <p id="displayRoomId" class="room-id">
+        ------
+      </p>
+
+      <p id="waitingMessage">
+        プレイヤーを待っています
+      </p>
+
+      <div id="playerList"></div>
     </section>
 
-    <p id="message"></p>
   </main>
 
   <script type="module" src="./js/main.js"></script>

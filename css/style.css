@@ -70,3 +70,100 @@
     margin-top: 25px;
     font-weight: bold;
   }
+
+  .hidden {
+    display: none;
+  }
+  
+  .player-section,
+  .create-room-section,
+  .join-room-section {
+    margin-top: 30px;
+  }
+  
+  .create-room-section,
+  .join-room-section {
+    padding: 24px;
+  
+    background: #f1f5f9;
+    border-radius: 12px;
+  }
+  
+  .create-room-section h2,
+  .join-room-section h2 {
+    margin-top: 0;
+    font-size: 20px;
+  }
+  
+  select {
+    padding: 12px;
+  
+    border: 1px solid #aaa;
+    border-radius: 8px;
+  
+    background: white;
+  
+    font-size: 16px;
+  }
+  
+  .create-room-section button,
+  .join-room-section button {
+    margin-left: 8px;
+  }
+  
+  .room-id {
+    margin: 12px 0 24px;
+  
+    font-size: 36px;
+    font-weight: bold;
+    letter-spacing: 8px;
+  }
+  
+  .player-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  
+    padding: 14px 18px;
+    margin-top: 12px;
+  
+    background: #f1f5f9;
+    border-radius: 10px;
+  
+    font-weight: bold;
+  }
+  
+  .host-label {
+    padding: 4px 10px;
+  
+    background: #f59e0b;
+    color: white;
+  
+    border-radius: 20px;
+  
+    font-size: 13px;
+  }
+  
+  @media (max-width: 600px) {
+    .container {
+      padding: 24px 18px;
+    }
+  
+    .create-room-section button,
+    .join-room-section button {
+      display: block;
+  
+      width: 100%;
+      margin: 12px 0 0;
+    }
+  
+    input,
+    select {
+      width: 100%;
+    }
+  
+    .room-id {
+      font-size: 28px;
+      letter-spacing: 5px;
+    }
+  }
