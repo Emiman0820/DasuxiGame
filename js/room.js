@@ -233,3 +233,70 @@ import {
       errorCallback
     );
   }
+
+  /**
+ * ホストがゲームを開始する
+ */
+export async function startGame({
+    roomId,
+    userId
+  }) {
+    if (!roomId) {
+      throw new Error("ルームIDを確認できません");
+    }
+  
+    if (!userId) {
+      throw new Error("ユーザー情報を確認できません");
+    }
+  
+    const roomReference = doc(
+      db,
+      "rooms",
+      roomId
+    );
+  
+    await runTransaction(db, async function (transaction) {
+      const roomSnapshot =
+        await transaction.get(roomReference);
+  
+      if (!roomSnapshot.exists()) {
+        throw new Error("部屋が見つかりません");
+      }
+  
+      const roomData = roomSnapshot.data();
+  
+      if (roomData.hostId !== userId) {
+        throw new Error(
+          "ゲームを開始できるのはホストだけです"
+        );
+      }
+  
+      if (roomData.status !== "waiting") {
+        throw new Error(
+          "この部屋はすでに開始されています"
+        );
+      }
+  
+      if (roomData.playerCount < roomData.maxPlayers) {
+        throw new Error(
+          "設定した人数がまだ揃っていません"
+        );
+      }
+  
+      transaction.update(roomReference, {
+        status: "playing",
+        startedAt: serverTimestamp(),
+        currentPlayerIndex: 0,
+        currentRound: 1,
+        remainingRolls: 3,
+        dice: [1, 1, 1, 1, 1],
+        keptDice: [
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      });
+    });
+  }

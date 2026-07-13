@@ -75,21 +75,42 @@
 
     <!-- 待機ルーム画面 -->
     <section id="waitingRoomScreen" class="hidden">
-      <h1>待機ルーム</h1>
-
-      <p>
-        ルームID
-      </p>
-
-      <p id="displayRoomId" class="room-id">
+        <h1>待機ルーム</h1>
+    
+        <p>ルームID</p>
+    
+        <p id="displayRoomId" class="room-id">
         ------
-      </p>
-
-      <p id="waitingMessage">
+        </p>
+    
+        <p id="waitingMessage">
         プレイヤーを待っています
-      </p>
-
-      <div id="playerList"></div>
+        </p>
+    
+        <div id="playerList"></div>
+    
+        <button
+        id="startGameButton"
+        class="hidden"
+        disabled
+        >
+        ゲーム開始
+        </button>
+    </section>
+    
+    <!-- ゲーム画面 -->
+    <section id="gameScreen" class="hidden">
+        <h1>Dasuxi ONLINE</h1>
+    
+        <p id="gameRoomId"></p>
+    
+        <h2>ゲーム開始！</h2>
+    
+        <p>
+        オンライン対戦の準備が完了しました。
+        </p>
+    
+        <div id="gamePlayerList"></div>
     </section>
 
   </main>

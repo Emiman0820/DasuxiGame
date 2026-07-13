@@ -11,7 +11,8 @@ import {
     createRoom,
     joinRoom,
     listenPlayers,
-    listenRoom
+    listenRoom,
+    startGame
   } from "./room.js";
   
   const connectionStatus =
@@ -49,6 +50,18 @@ import {
   
   const playerList =
     document.getElementById("playerList");
+
+  const startGameButton =
+    document.getElementById("startGameButton");
+  
+  const gameScreen =
+    document.getElementById("gameScreen");
+  
+  const gameRoomId =
+    document.getElementById("gameRoomId");
+  
+  const gamePlayerList =
+    document.getElementById("gamePlayerList");
   
   let currentUser = null;
   let currentRoomId = null;
@@ -99,6 +112,11 @@ import {
   joinRoomButton.addEventListener(
     "click",
     handleJoinRoom
+  );
+
+  startGameButton.addEventListener(
+    "click",
+    handleStartGame
   );
   
   roomIdInput.addEventListener("input", function () {
@@ -265,12 +283,25 @@ import {
       return;
     }
   
+    if (currentRoom.status === "playing") {
+      openGameScreen();
+      return;
+    }
+  
     const playerCount = currentPlayers.length;
     const maxPlayers = currentRoom.maxPlayers;
   
-    if (playerCount >= maxPlayers) {
+    const isHost =
+      currentRoom.hostId === currentUser?.uid;
+  
+    const isFull =
+      playerCount >= maxPlayers;
+  
+    if (isFull) {
       waitingMessage.textContent =
-        "全員揃いました";
+        isHost
+          ? "全員揃いました。ゲームを開始できます"
+          : "全員揃いました。ホストの開始を待っています";
     } else {
       waitingMessage.textContent =
         `プレイヤーを待っています（${playerCount} / ${maxPlayers}）`;
@@ -302,6 +333,17 @@ import {
         `;
       })
       .join("");
+  
+    if (isHost) {
+      startGameButton.classList.remove("hidden");
+      startGameButton.disabled = !isFull;
+  
+      startGameButton.textContent = isFull
+        ? "ゲーム開始"
+        : `あと${maxPlayers - playerCount}人`;
+    } else {
+      startGameButton.classList.add("hidden");
+    }
   }
   
   function handleListenerError(error) {
@@ -326,3 +368,59 @@ import {
   }
   
   loginAnonymously();
+
+  async function handleStartGame() {
+    if (!currentUser || !currentRoomId) {
+      waitingMessage.textContent =
+        "部屋情報を確認できません";
+  
+      return;
+    }
+  
+    try {
+      startGameButton.disabled = true;
+      startGameButton.textContent =
+        "ゲームを開始しています...";
+  
+      await startGame({
+        roomId: currentRoomId,
+        userId: currentUser.uid
+      });
+    } catch (error) {
+      console.error("ゲーム開始エラー:", error);
+  
+      waitingMessage.textContent =
+        error.message ||
+        "ゲームの開始に失敗しました";
+  
+      renderWaitingRoom();
+    }
+  }
+
+  function openGameScreen() {
+    waitingRoomScreen.classList.add("hidden");
+    gameScreen.classList.remove("hidden");
+  
+    gameRoomId.textContent =
+      `ルームID：${currentRoomId}`;
+  
+    gamePlayerList.innerHTML = currentPlayers
+      .map(function (player, index) {
+        const turnLabel =
+          index === currentRoom.currentPlayerIndex
+            ? `<span class="turn-label">最初の手番</span>`
+            : "";
+  
+        return `
+          <div class="player-card">
+            <span>
+              ${index + 1}.
+              ${escapeHtml(player.name)}
+            </span>
+  
+            ${turnLabel}
+          </div>
+        `;
+      })
+      .join("");
+  }
