@@ -162,12 +162,27 @@
     <button id="rollDiceButton" disabled>
       サイコロを振る
     </button>
+
+    <section class="score-section">
+        <div class="score-header">
+          <h2>得点表</h2>
+      
+          <p id="scoreHelp">
+            サイコロを振ると得点候補が表示されます
+          </p>
+        </div>
+      
+        <div
+          id="scoreBoard"
+          class="score-board"
+        ></div>
+      </section>
   
     <div id="gamePlayerList"></div>
   </section>
 
   </main>
-  
+
   <audio id="diceRollSound" src="./sounds/dice-roll.mp3" preload="auto"></audio>
   <script type="module" src="./js/main.js"></script>
 </body>

@@ -19,6 +19,11 @@ import {
     rollDice,
     toggleDiceKeep
   } from "./game.js";
+
+  import {
+    calculateScoreCandidates,
+    SCORE_CATEGORIES
+  } from "./score.js";
   
   const connectionStatus =
     document.getElementById("connectionStatus");
@@ -88,6 +93,12 @@ import {
 
   const diceRollSound =
     document.getElementById("diceRollSound");
+
+  const scoreBoard =
+    document.getElementById("scoreBoard");
+  
+  const scoreHelp =
+    document.getElementById("scoreHelp");
 
   const DICE_SYMBOLS = [
     "",
@@ -649,7 +660,13 @@ import {
       remainingRolls > 0
         ? "サイコロを振る"
         : "役を選んでください";
-  
+
+    renderScoreBoard({
+        dice,
+        isMyTurn,
+        hasRolled
+    });
+
     gamePlayerList.innerHTML = currentPlayers
       .map(function (player, index) {
         const isCurrent =
@@ -855,4 +872,95 @@ import {
         );
       });
     }
+  }
+
+  function renderScoreBoard({
+    dice,
+    isMyTurn,
+    hasRolled
+  }) {
+    if (!hasRolled) {
+      scoreHelp.textContent =
+        "最初にサイコロを振ってください";
+  
+      scoreBoard.innerHTML =
+        SCORE_CATEGORIES
+          .map(function (category) {
+            return createScoreRowHtml({
+              category,
+              score: null,
+              disabled: true
+            });
+          })
+          .join("");
+  
+      return;
+    }
+  
+    let candidates;
+  
+    try {
+      candidates =
+        calculateScoreCandidates(dice);
+    } catch (error) {
+      console.error(
+        "得点計算エラー:",
+        error
+      );
+  
+      scoreHelp.textContent =
+        "得点を計算できませんでした";
+  
+      return;
+    }
+  
+    scoreHelp.textContent = isMyTurn
+      ? "現在の出目で獲得できる得点です"
+      : "手番プレイヤーの得点候補です";
+  
+    scoreBoard.innerHTML =
+      SCORE_CATEGORIES
+        .map(function (category) {
+          return createScoreRowHtml({
+            category,
+            score: candidates[category.key],
+            disabled:
+              !isMyTurn ||
+              isDiceAnimating
+          });
+        })
+        .join("");
+  }
+  
+  function createScoreRowHtml({
+    category,
+    score,
+    disabled
+  }) {
+    const scoreText =
+      score === null
+        ? "-"
+        : `${score}点`;
+  
+    const sectionClass =
+      category.section === "number"
+        ? "number-score"
+        : "combination-score";
+  
+    return `
+      <button
+        type="button"
+        class="score-row ${sectionClass}"
+        data-category="${category.key}"
+        ${disabled ? "disabled" : ""}
+      >
+        <span class="score-name">
+          ${escapeHtml(category.label)}
+        </span>
+  
+        <span class="score-value">
+          ${scoreText}
+        </span>
+      </button>
+    `;
   }
