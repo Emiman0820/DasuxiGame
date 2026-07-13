@@ -167,3 +167,25 @@
       letter-spacing: 5px;
     }
   }
+
+  .player-labels {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .own-label {
+    padding: 4px 10px;
+  
+    background: #2563eb;
+    color: white;
+  
+    border-radius: 20px;
+  
+    font-size: 13px;
+  }
+  
+  #roomIdInput {
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }

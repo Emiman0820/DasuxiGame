@@ -1,6 +1,6 @@
 import {
-    signInAnonymously,
-    onAuthStateChanged
+    onAuthStateChanged,
+    signInAnonymously
   } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
   
   import {
@@ -8,7 +8,10 @@ import {
   } from "./firebase-config.js";
   
   import {
-    createRoom
+    createRoom,
+    joinRoom,
+    listenPlayers,
+    listenRoom
   } from "./room.js";
   
   const connectionStatus =
@@ -41,10 +44,19 @@ import {
   const displayRoomId =
     document.getElementById("displayRoomId");
   
+  const waitingMessage =
+    document.getElementById("waitingMessage");
+  
   const playerList =
     document.getElementById("playerList");
   
   let currentUser = null;
+  let currentRoomId = null;
+  let currentRoom = null;
+  let currentPlayers = [];
+  
+  let unsubscribeRoom = null;
+  let unsubscribePlayers = null;
   
   createRoomButton.disabled = true;
   joinRoomButton.disabled = true;
@@ -84,10 +96,21 @@ import {
     handleCreateRoom
   );
   
+  joinRoomButton.addEventListener(
+    "click",
+    handleJoinRoom
+  );
+  
+  roomIdInput.addEventListener("input", function () {
+    roomIdInput.value = roomIdInput.value
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "");
+  });
+  
   async function handleCreateRoom() {
     if (!currentUser) {
       message.textContent =
-        "Firebaseへの接続を確認しています...";
+        "Firebaseへの接続を確認しています";
   
       return;
     }
@@ -98,61 +121,199 @@ import {
     const maxPlayers =
       Number(maxPlayersSelect.value);
   
-    if (!playerName) {
-      message.textContent =
-        "プレイヤー名を入力してください";
-  
-      playerNameInput.focus();
+    if (!validatePlayerName(playerName)) {
       return;
     }
   
+    setHomeButtonsDisabled(true);
+    message.textContent =
+      "部屋を作成しています...";
+  
     try {
-      createRoomButton.disabled = true;
-      joinRoomButton.disabled = true;
-  
-      message.textContent =
-        "部屋を作成しています...";
-  
       const roomId = await createRoom({
         hostId: currentUser.uid,
-        playerName: playerName,
-        maxPlayers: maxPlayers
+        playerName,
+        maxPlayers
       });
   
-      showWaitingRoom({
-        roomId: roomId,
-        playerName: playerName,
-        maxPlayers: maxPlayers
-      });
+      openWaitingRoom(roomId);
     } catch (error) {
       console.error("部屋作成エラー:", error);
   
       message.textContent =
         error.message || "部屋の作成に失敗しました";
   
-      createRoomButton.disabled = false;
-      joinRoomButton.disabled = false;
+      setHomeButtonsDisabled(false);
     }
   }
   
-  function showWaitingRoom({
-    roomId,
-    playerName,
-    maxPlayers
-  }) {
+  async function handleJoinRoom() {
+    if (!currentUser) {
+      message.textContent =
+        "Firebaseへの接続を確認しています";
+  
+      return;
+    }
+  
+    const playerName =
+      playerNameInput.value.trim();
+  
+    const roomId =
+      roomIdInput.value.trim().toUpperCase();
+  
+    if (!validatePlayerName(playerName)) {
+      return;
+    }
+  
+    if (roomId.length !== 6) {
+      message.textContent =
+        "6文字のルームIDを入力してください";
+  
+      roomIdInput.focus();
+      return;
+    }
+  
+    setHomeButtonsDisabled(true);
+    message.textContent =
+      "部屋に参加しています...";
+  
+    try {
+      const joinedRoomId = await joinRoom({
+        roomId,
+        playerId: currentUser.uid,
+        playerName
+      });
+  
+      openWaitingRoom(joinedRoomId);
+    } catch (error) {
+      console.error("部屋参加エラー:", error);
+  
+      message.textContent =
+        error.message || "部屋への参加に失敗しました";
+  
+      setHomeButtonsDisabled(false);
+    }
+  }
+  
+  function validatePlayerName(playerName) {
+    if (playerName) {
+      return true;
+    }
+  
+    message.textContent =
+      "プレイヤー名を入力してください";
+  
+    playerNameInput.focus();
+  
+    return false;
+  }
+  
+  function openWaitingRoom(roomId) {
+    currentRoomId = roomId;
+  
     homeScreen.classList.add("hidden");
     waitingRoomScreen.classList.remove("hidden");
   
     displayRoomId.textContent = roomId;
   
-    playerList.innerHTML = `
-      <div class="player-card">
-        <span>1. ${escapeHtml(playerName)}</span>
-        <span class="host-label">ホスト</span>
-      </div>
+    startRoomListeners(roomId);
+  }
   
-      <p>参加者 1 / ${maxPlayers}</p>
-    `;
+  function startRoomListeners(roomId) {
+    stopRoomListeners();
+  
+    unsubscribeRoom = listenRoom(
+      roomId,
+      function (room) {
+        if (!room) {
+          waitingMessage.textContent =
+            "部屋が見つかりません";
+  
+          return;
+        }
+  
+        currentRoom = room;
+        renderWaitingRoom();
+      },
+      handleListenerError
+    );
+  
+    unsubscribePlayers = listenPlayers(
+      roomId,
+      function (players) {
+        currentPlayers = players;
+        renderWaitingRoom();
+      },
+      handleListenerError
+    );
+  }
+  
+  function stopRoomListeners() {
+    if (unsubscribeRoom) {
+      unsubscribeRoom();
+      unsubscribeRoom = null;
+    }
+  
+    if (unsubscribePlayers) {
+      unsubscribePlayers();
+      unsubscribePlayers = null;
+    }
+  }
+  
+  function renderWaitingRoom() {
+    if (!currentRoom) {
+      return;
+    }
+  
+    const playerCount = currentPlayers.length;
+    const maxPlayers = currentRoom.maxPlayers;
+  
+    if (playerCount >= maxPlayers) {
+      waitingMessage.textContent =
+        "全員揃いました";
+    } else {
+      waitingMessage.textContent =
+        `プレイヤーを待っています（${playerCount} / ${maxPlayers}）`;
+    }
+  
+    playerList.innerHTML = currentPlayers
+      .map(function (player, index) {
+        const hostLabel = player.isHost
+          ? `<span class="host-label">ホスト</span>`
+          : "";
+  
+        const ownLabel =
+          player.id === currentUser?.uid
+            ? `<span class="own-label">あなた</span>`
+            : "";
+  
+        return `
+          <div class="player-card">
+            <span>
+              ${index + 1}.
+              ${escapeHtml(player.name)}
+            </span>
+  
+            <span class="player-labels">
+              ${ownLabel}
+              ${hostLabel}
+            </span>
+          </div>
+        `;
+      })
+      .join("");
+  }
+  
+  function handleListenerError(error) {
+    console.error("リアルタイム監視エラー:", error);
+  
+    waitingMessage.textContent =
+      "部屋情報の取得に失敗しました";
+  }
+  
+  function setHomeButtonsDisabled(disabled) {
+    createRoomButton.disabled = disabled;
+    joinRoomButton.disabled = disabled;
   }
   
   function escapeHtml(value) {

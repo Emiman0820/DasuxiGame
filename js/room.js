@@ -1,8 +1,13 @@
 import {
+    collection,
     doc,
     getDoc,
-    setDoc,
-    serverTimestamp
+    onSnapshot,
+    orderBy,
+    query,
+    runTransaction,
+    serverTimestamp,
+    setDoc
   } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
   
   import {
@@ -14,9 +19,6 @@ import {
   
   const ROOM_ID_LENGTH = 6;
   
-  /**
-   * ランダムなルームIDを生成する
-   */
   function generateRoomId() {
     let roomId = "";
   
@@ -31,15 +33,11 @@ import {
     return roomId;
   }
   
-  /**
-   * 未使用のルームIDを生成する
-   */
   async function generateUniqueRoomId() {
     const maxAttempts = 10;
   
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const roomId = generateRoomId();
-  
       const roomReference = doc(db, "rooms", roomId);
       const roomSnapshot = await getDoc(roomReference);
   
@@ -53,9 +51,6 @@ import {
     );
   }
   
-  /**
-   * Firestoreに部屋を作成する
-   */
   export async function createRoom({
     hostId,
     playerName,
@@ -74,14 +69,13 @@ import {
     }
   
     const roomId = await generateUniqueRoomId();
-  
     const roomReference = doc(db, "rooms", roomId);
   
     await setDoc(roomReference, {
-      roomId: roomId,
-      hostId: hostId,
+      roomId,
+      hostId,
       status: "waiting",
-      maxPlayers: maxPlayers,
+      maxPlayers,
       playerCount: 1,
       currentPlayerIndex: 0,
       createdAt: serverTimestamp()
@@ -105,4 +99,137 @@ import {
     });
   
     return roomId;
+  }
+  
+  export async function joinRoom({
+    roomId,
+    playerId,
+    playerName
+  }) {
+    const normalizedRoomId =
+      roomId.trim().toUpperCase();
+  
+    if (!normalizedRoomId) {
+      throw new Error("ルームIDを入力してください");
+    }
+  
+    if (!playerId) {
+      throw new Error("ユーザー情報を確認できません");
+    }
+  
+    if (!playerName) {
+      throw new Error("プレイヤー名を入力してください");
+    }
+  
+    const roomReference = doc(
+      db,
+      "rooms",
+      normalizedRoomId
+    );
+  
+    const playerReference = doc(
+      db,
+      "rooms",
+      normalizedRoomId,
+      "players",
+      playerId
+    );
+  
+    await runTransaction(db, async function (transaction) {
+      const roomSnapshot =
+        await transaction.get(roomReference);
+  
+      if (!roomSnapshot.exists()) {
+        throw new Error("指定された部屋が見つかりません");
+      }
+  
+      const roomData = roomSnapshot.data();
+  
+      if (roomData.status !== "waiting") {
+        throw new Error(
+          "この部屋はすでにゲームを開始しています"
+        );
+      }
+  
+      const existingPlayerSnapshot =
+        await transaction.get(playerReference);
+  
+      if (existingPlayerSnapshot.exists()) {
+        return;
+      }
+  
+      if (roomData.playerCount >= roomData.maxPlayers) {
+        throw new Error("この部屋は満員です");
+      }
+  
+      const playerOrder = roomData.playerCount;
+  
+      transaction.set(playerReference, {
+        id: playerId,
+        name: playerName,
+        order: playerOrder,
+        isHost: false,
+        joinedAt: serverTimestamp(),
+        scores: {}
+      });
+  
+      transaction.update(roomReference, {
+        playerCount: roomData.playerCount + 1
+      });
+    });
+  
+    return normalizedRoomId;
+  }
+  
+  export function listenRoom(roomId, callback, errorCallback) {
+    const roomReference = doc(db, "rooms", roomId);
+  
+    return onSnapshot(
+      roomReference,
+      function (snapshot) {
+        if (!snapshot.exists()) {
+          callback(null);
+          return;
+        }
+  
+        callback({
+          id: snapshot.id,
+          ...snapshot.data()
+        });
+      },
+      errorCallback
+    );
+  }
+  
+  export function listenPlayers(
+    roomId,
+    callback,
+    errorCallback
+  ) {
+    const playersReference = collection(
+      db,
+      "rooms",
+      roomId,
+      "players"
+    );
+  
+    const playersQuery = query(
+      playersReference,
+      orderBy("order", "asc")
+    );
+  
+    return onSnapshot(
+      playersQuery,
+      function (snapshot) {
+        const players = snapshot.docs.map(function (document) {
+          return {
+            id: document.id,
+            ...document.data()
+          };
+        });
+  
+        callback(players);
+      },
+      errorCallback
+    );
   }
