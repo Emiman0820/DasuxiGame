@@ -162,6 +162,9 @@ const scoreEffectValue =
 const allScoreBoard =
     document.getElementById("allScoreBoard");
 
+const appContainer =
+    document.querySelector(".container");
+
 const DICE_PIP_POSITIONS = {
     1: ["center"],
 
@@ -612,6 +615,10 @@ async function handleStartGame() {
 function openGameScreen() {
     waitingRoomScreen.classList.add("hidden");
     gameScreen.classList.remove("hidden");
+
+    appContainer.classList.add(
+        "game-container-wide"
+    );
 
     gameRoomId.textContent =
         `ルームID：${currentRoomId}`;

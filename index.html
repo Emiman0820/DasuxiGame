@@ -84,71 +84,92 @@
 
         <!-- ゲーム画面 -->
         <section id="gameScreen" class="hidden">
-            <h1>Dasuxi ONLINE</h1>
 
-            <p id="gameRoomId"></p>
+            <header class="game-header">
+                <div>
+                    <h1>Dasuxi ONLINE</h1>
+                    <p id="gameRoomId"></p>
+                </div>
 
-            <div class="turn-information">
-                <p id="roundText">
-                    ラウンド 1
-                </p>
+                <div id="gamePlayerList" class="game-player-summary"></div>
+            </header>
 
-                <h2 id="currentPlayerText">
-                    プレイヤーの手番
-                </h2>
+            <div class="game-layout">
 
-                <p id="turnMessage">
-                    サイコロを振ってください
-                </p>
+                <!-- 左側：ゲーム操作 -->
+                <section class="game-main-column">
+
+                    <div class="turn-information">
+                        <p id="roundText">
+                            ラウンド 1
+                        </p>
+
+                        <h2 id="currentPlayerText">
+                            プレイヤーの手番
+                        </h2>
+
+                        <p id="turnMessage">
+                            サイコロを振ってください
+                        </p>
+                    </div>
+
+                    <section class="dice-panel">
+                        <div id="diceArea" class="dice-area">
+                            <button class="dice" data-index="0" type="button" aria-label="サイコロ1"></button>
+
+                            <button class="dice" data-index="1" type="button" aria-label="サイコロ2"></button>
+
+                            <button class="dice" data-index="2" type="button" aria-label="サイコロ3"></button>
+
+                            <button class="dice" data-index="3" type="button" aria-label="サイコロ4"></button>
+
+                            <button class="dice" data-index="4" type="button" aria-label="サイコロ5"></button>
+                        </div>
+
+                        <p id="remainingRollsText">
+                            残り3回
+                        </p>
+
+                        <button id="rollDiceButton" disabled>
+                            サイコロを振る
+                        </button>
+                    </section>
+
+                    <!-- 操作用得点表 -->
+                    <section class="score-section">
+                        <div class="score-header">
+                            <h2>役を選ぶ</h2>
+
+                            <p id="scoreHelp">
+                                サイコロを振ると得点候補が表示されます
+                            </p>
+                        </div>
+
+                        <div id="scoreBoard" class="score-board"></div>
+                    </section>
+
+                </section>
+
+                <!-- 右側：全体スコア -->
+                <aside class="game-side-column">
+
+                    <section class="all-score-section">
+                        <div class="all-score-header">
+                            <h2>スコアボード</h2>
+
+                            <p>
+                                各プレイヤーの確定済み得点
+                            </p>
+                        </div>
+
+                        <div class="all-score-scroll">
+                            <table id="allScoreBoard" class="all-score-board"></table>
+                        </div>
+                    </section>
+
+                </aside>
+
             </div>
-
-            <div id="diceArea" class="dice-area">
-                <button class="dice" data-index="0" type="button" aria-label="サイコロ1"></button>
-
-                <button class="dice" data-index="1" type="button" aria-label="サイコロ2"></button>
-
-                <button class="dice" data-index="2" type="button" aria-label="サイコロ3"></button>
-
-                <button class="dice" data-index="3" type="button" aria-label="サイコロ4"></button>
-
-                <button class="dice" data-index="4" type="button" aria-label="サイコロ5"></button>
-            </div>
-
-            <p id="remainingRollsText">
-                残り3回
-            </p>
-
-            <button id="rollDiceButton" disabled>
-                サイコロを振る
-            </button>
-
-            <section class="score-section">
-                <div class="score-header">
-                    <h2>得点表</h2>
-
-                    <p id="scoreHelp">
-                        サイコロを振ると得点候補が表示されます
-                    </p>
-                </div>
-
-                <div id="scoreBoard" class="score-board"></div>
-            </section>
-
-            <section class="all-score-section">
-                <div class="all-score-header">
-                    <h2>全体スコア</h2>
-
-                    <p>
-                        各プレイヤーの確定済み得点
-                    </p>
-                </div>
-
-                <div class="all-score-scroll">
-                    <table id="allScoreBoard" class="all-score-board"></table>
-                </div>
-            </section>
-
-            <div id="gamePlayerList"></div>
         </section>
 
     </main>
