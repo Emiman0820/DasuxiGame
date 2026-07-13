@@ -1429,26 +1429,3 @@ function calculateConfirmedTotal(scores) {
         0
     );
 }
-
-function calculateConfirmedTotal(scores) {
-    if (!scores) {
-        return 0;
-    }
-
-    return SCORE_CATEGORIES.reduce(
-        function (total, category) {
-            const score =
-                scores[category.key];
-
-            if (
-                typeof score !== "number" ||
-                !Number.isFinite(score)
-            ) {
-                return total;
-            }
-
-            return total + score;
-        },
-        0
-    );
-}
