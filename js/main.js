@@ -973,8 +973,12 @@ function playDiceSound() {
 function renderScoreBoard({
     dice,
     isMyTurn,
-    hasRolled
+    hasRolled,
+    confirmedScores
 }) {
+    const scores = confirmedScores ?? {};
+
+    // まだサイコロを振っていない場合
     if (!hasRolled) {
         scoreHelp.textContent =
             "最初にサイコロを振ってください";
@@ -983,7 +987,7 @@ function renderScoreBoard({
             SCORE_CATEGORIES
                 .map(function (category) {
                     const confirmedScore =
-                        confirmedScores?.[category.key];
+                        scores[category.key];
 
                     const isConfirmed =
                         confirmedScore !== undefined &&
@@ -994,7 +998,6 @@ function renderScoreBoard({
                         score: isConfirmed
                             ? confirmedScore
                             : null,
-
                         disabled: true,
                         isConfirmed
                     });
@@ -1028,12 +1031,29 @@ function renderScoreBoard({
     scoreBoard.innerHTML =
         SCORE_CATEGORIES
             .map(function (category) {
+                const confirmedScore =
+                    scores[category.key];
+
+                const isConfirmed =
+                    confirmedScore !== undefined &&
+                    confirmedScore !== null;
+
                 return createScoreRowHtml({
                     category,
-                    score: candidates[category.key],
+
+                    // 確定済みなら確定点、
+                    // 未使用なら今回の候補点
+                    score: isConfirmed
+                        ? confirmedScore
+                        : candidates[category.key],
+
+                    // 確定済みの役は押せない
                     disabled:
+                        isConfirmed ||
                         !isMyTurn ||
-                        isDiceAnimating
+                        isDiceAnimating,
+
+                    isConfirmed
                 });
             })
             .join("");
@@ -1055,10 +1075,15 @@ function createScoreRowHtml({
             ? "number-score"
             : "combination-score";
 
+    const confirmedClass =
+        isConfirmed
+            ? "confirmed"
+            : "";
+
     return `
       <button
         type="button"
-        class="score-row ${sectionClass}"
+        class="score-row ${sectionClass} ${confirmedClass}"
         data-category="${category.key}"
         ${disabled ? "disabled" : ""}
       >
@@ -1066,7 +1091,7 @@ function createScoreRowHtml({
           ${isConfirmed ? "✓ " : ""}
           ${escapeHtml(category.label)}
         </span>
-  
+
         <span class="score-value">
           ${scoreText}
         </span>
