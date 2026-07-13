@@ -219,6 +219,11 @@ import {
     handleStartGame
   );
 
+  rollDiceButton.addEventListener(
+    "click",
+    handleRollDice
+  );
+
   diceElements.forEach(function (
     diceElement,
     index
@@ -632,20 +637,6 @@ import {
     diceElement.title = isKept
         ? "クリックしてキープ解除"
         : "クリックしてキープ";
-    });
-  
-    diceElements.forEach(function (
-      diceElement,
-      index
-    ) {
-      const value = dice[index] ?? 1;
-  
-      renderDiceFace(
-        diceElement,
-        value
-      );
-  
-      diceElement.disabled = true;
     });
   
     remainingRollsText.textContent =
