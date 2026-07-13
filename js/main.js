@@ -16,7 +16,8 @@ import {
   } from "./room.js";
 
   import {
-    rollDice
+    rollDice,
+    toggleDiceKeep
   } from "./game.js";
   
   const connectionStatus =
@@ -85,6 +86,9 @@ import {
   const rollDiceButton =
     document.getElementById("rollDiceButton");
 
+  const diceRollSound =
+    document.getElementById("diceRollSound");
+
   const DICE_SYMBOLS = [
     "",
     "⚀",
@@ -95,6 +99,67 @@ import {
     "⚅"
     ];
 
+  const DICE_PIP_POSITIONS = {
+    1: ["center"],
+
+    2: [
+        "top-left",
+        "bottom-right"
+    ],
+
+    3: [
+        "top-left",
+        "center",
+        "bottom-right"
+    ],
+
+    4: [
+        "top-left",
+        "top-right",
+        "bottom-left",
+        "bottom-right"
+    ],
+
+    5: [
+        "top-left",
+        "top-right",
+        "center",
+        "bottom-left",
+        "bottom-right"
+    ],
+
+    6: [
+        "top-left",
+        "middle-left",
+        "bottom-left",
+        "top-right",
+        "middle-right",
+        "bottom-right"
+    ]
+  };
+
+  function renderDiceFace(
+    diceElement,
+    value
+  ) {
+    const positions =
+      DICE_PIP_POSITIONS[value] ??
+      DICE_PIP_POSITIONS[1];
+  
+    diceElement.innerHTML = positions
+      .map(function (position) {
+        return `
+          <span class="pip ${position}"></span>
+        `;
+      })
+      .join("");
+  
+    diceElement.setAttribute(
+      "aria-label",
+      `サイコロの目 ${value}`
+    );
+  }
+
   let currentUser = null;
   let currentRoomId = null;
   let currentRoom = null;
@@ -102,6 +167,9 @@ import {
   
   let unsubscribeRoom = null;
   let unsubscribePlayers = null;
+
+  let displayedRollNumber = 0;
+  let isDiceAnimating = false;
   
   createRoomButton.disabled = true;
   joinRoomButton.disabled = true;
@@ -150,6 +218,18 @@ import {
     "click",
     handleStartGame
   );
+
+  diceElements.forEach(function (
+    diceElement,
+    index
+  ) {
+    diceElement.addEventListener(
+      "click",
+      function () {
+        handleToggleDiceKeep(index);
+      }
+    );
+  });
   
   roomIdInput.addEventListener("input", function () {
     roomIdInput.value = roomIdInput.value
@@ -165,11 +245,6 @@ import {
       return;
     }
 
-    rollDiceButton.addEventListener(
-        "click",
-        handleRollDice
-      );
-  
     const playerName =
       playerNameInput.value.trim();
   
@@ -463,6 +538,24 @@ import {
     ) {
       return;
     }
+
+    const rollNumber =
+         currentRoom.rollNumber ?? 0;
+
+    if (
+        rollNumber > displayedRollNumber &&
+        !isDiceAnimating
+    ) {
+        displayedRollNumber = rollNumber;
+
+    const finalDice =
+        Array.isArray(currentRoom.dice)
+        ? [...currentRoom.dice]
+        : [1, 1, 1, 1, 1];
+
+        animateDiceRoll(finalDice);
+        return;
+    }
   
     const currentPlayerIndex =
       currentRoom.currentPlayerIndex ?? 0;
@@ -501,8 +594,45 @@ import {
     }
   
     const dice = Array.isArray(currentRoom.dice)
-      ? currentRoom.dice
-      : [1, 1, 1, 1, 1];
+        ? currentRoom.dice
+        : [1, 1, 1, 1, 1];
+
+    const keptDice =
+    Array.isArray(currentRoom.keptDice)
+        ? currentRoom.keptDice
+        : [false, false, false, false, false];
+
+    const hasRolled =
+    currentRoom.hasRolled === true;
+
+    diceElements.forEach(function (
+    diceElement,
+    index
+    ) {
+    const value = dice[index] ?? 1;
+    const isKept = keptDice[index];
+
+    if (!isDiceAnimating) {
+        renderDiceFace(
+        diceElement,
+        value
+        );
+    }
+
+    diceElement.classList.toggle(
+        "kept",
+        isKept
+    );
+
+    diceElement.disabled =
+        !isMyTurn ||
+        !hasRolled ||
+        isDiceAnimating;
+
+    diceElement.title = isKept
+        ? "クリックしてキープ解除"
+        : "クリックしてキープ";
+    });
   
     diceElements.forEach(function (
       diceElement,
@@ -510,8 +640,10 @@ import {
     ) {
       const value = dice[index] ?? 1;
   
-      diceElement.textContent =
-        DICE_SYMBOLS[value];
+      renderDiceFace(
+        diceElement,
+        value
+      );
   
       diceElement.disabled = true;
     });
@@ -571,17 +703,165 @@ import {
       rollDiceButton.textContent =
         "振っています...";
   
+      /*
+       * ユーザー操作直後なので、
+       * 自分側の効果音を開始しやすい
+       */
+      playDiceSound();
+  
       await rollDice({
         roomId: currentRoomId,
         userId: currentUser.uid
       });
     } catch (error) {
-      console.error("サイコロ処理エラー:", error);
+      console.error(
+        "サイコロ処理エラー:",
+        error
+      );
   
       turnMessage.textContent =
         error.message ||
         "サイコロを振れませんでした";
   
       renderGameScreen();
+    }
+  }
+
+  async function handleToggleDiceKeep(index) {
+    if (
+      !currentUser ||
+      !currentRoomId ||
+      isDiceAnimating
+    ) {
+      return;
+    }
+  
+    try {
+      await toggleDiceKeep({
+        roomId: currentRoomId,
+        userId: currentUser.uid,
+        diceIndex: index
+      });
+    } catch (error) {
+      console.error(
+        "サイコロキープエラー:",
+        error
+      );
+  
+      turnMessage.textContent =
+        error.message ||
+        "キープ状態を変更できませんでした";
+    }
+  }
+
+  async function animateDiceRoll(finalDice) {
+    if (isDiceAnimating) {
+      return;
+    }
+  
+    isDiceAnimating = true;
+  
+    rollDiceButton.disabled = true;
+  
+    const wasRolledByMe =
+    currentRoom.lastRolledBy ===
+    currentUser?.uid;
+
+    if (!wasRolledByMe) {
+        playDiceSound();
+    }
+  
+    const keptDice =
+      Array.isArray(currentRoom.keptDice)
+        ? currentRoom.keptDice
+        : [false, false, false, false, false];
+  
+    diceElements.forEach(function (
+      diceElement,
+      index
+    ) {
+      if (!keptDice[index]) {
+        diceElement.classList.add("rolling");
+      }
+    });
+  
+    const animationDuration = 700;
+    const changeInterval = 80;
+  
+    const intervalId = window.setInterval(
+      function () {
+        diceElements.forEach(function (
+          diceElement,
+          index
+        ) {
+          if (keptDice[index]) {
+            return;
+          }
+  
+          const randomValue =
+            Math.floor(Math.random() * 6) + 1;
+  
+          renderDiceFace(
+            diceElement,
+            randomValue
+          );
+        });
+      },
+      changeInterval
+    );
+  
+    await wait(animationDuration);
+  
+    window.clearInterval(intervalId);
+  
+    diceElements.forEach(function (
+      diceElement,
+      index
+    ) {
+      renderDiceFace(
+        diceElement,
+        finalDice[index] ?? 1
+      );
+  
+      diceElement.classList.remove("rolling");
+  
+      if (!keptDice[index]) {
+        diceElement.classList.add("landed");
+  
+        window.setTimeout(function () {
+          diceElement.classList.remove("landed");
+        }, 250);
+      }
+    });
+  
+    isDiceAnimating = false;
+  
+    renderGameScreen();
+  }
+  
+  function wait(milliseconds) {
+    return new Promise(function (resolve) {
+      window.setTimeout(resolve, milliseconds);
+    });
+  }
+  
+  function playDiceSound() {
+    if (!diceRollSound) {
+      return;
+    }
+  
+    diceRollSound.pause();
+    diceRollSound.currentTime = 0;
+  
+    const playPromise =
+      diceRollSound.play();
+  
+    if (playPromise) {
+      playPromise.catch(function (error) {
+        console.debug(
+          "サイコロ音を再生できませんでした:",
+          error
+        );
+      });
     }
   }

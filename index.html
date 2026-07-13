@@ -119,11 +119,40 @@
     </div>
   
     <div id="diceArea" class="dice-area">
-      <button class="dice" data-index="0">⚀</button>
-      <button class="dice" data-index="1">⚀</button>
-      <button class="dice" data-index="2">⚀</button>
-      <button class="dice" data-index="3">⚀</button>
-      <button class="dice" data-index="4">⚀</button>
+        <button
+            class="dice"
+            data-index="0"
+            type="button"
+            aria-label="サイコロ1"
+        ></button>
+        
+        <button
+            class="dice"
+            data-index="1"
+            type="button"
+            aria-label="サイコロ2"
+        ></button>
+        
+        <button
+            class="dice"
+            data-index="2"
+            type="button"
+            aria-label="サイコロ3"
+        ></button>
+        
+        <button
+            class="dice"
+            data-index="3"
+            type="button"
+            aria-label="サイコロ4"
+        ></button>
+        
+        <button
+            class="dice"
+            data-index="4"
+            type="button"
+            aria-label="サイコロ5"
+        ></button>
     </div>
   
     <p id="remainingRollsText">
@@ -138,7 +167,8 @@
   </section>
 
   </main>
-
+  
+  <audio id="diceRollSound" src="./sounds/dice-roll.mp3" preload="auto"></audio>
   <script type="module" src="./js/main.js"></script>
 </body>
 </html>

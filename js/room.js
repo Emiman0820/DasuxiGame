@@ -305,7 +305,8 @@ export async function startGame({
           false,
           false
         ],
-        hasRolled: false
+        hasRolled: false,
+        rollNumber: 0
       });
     });
   }
