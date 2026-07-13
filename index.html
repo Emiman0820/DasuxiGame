@@ -99,19 +99,43 @@
     </section>
     
     <!-- ゲーム画面 -->
-    <section id="gameScreen" class="hidden">
-        <h1>Dasuxi ONLINE</h1>
-    
-        <p id="gameRoomId"></p>
-    
-        <h2>ゲーム開始！</h2>
-    
-        <p>
-        オンライン対戦の準備が完了しました。
-        </p>
-    
-        <div id="gamePlayerList"></div>
-    </section>
+<section id="gameScreen" class="hidden">
+    <h1>Dasuxi ONLINE</h1>
+  
+    <p id="gameRoomId"></p>
+  
+    <div class="turn-information">
+      <p id="roundText">
+        ラウンド 1
+      </p>
+  
+      <h2 id="currentPlayerText">
+        プレイヤーの手番
+      </h2>
+  
+      <p id="turnMessage">
+        サイコロを振ってください
+      </p>
+    </div>
+  
+    <div id="diceArea" class="dice-area">
+      <button class="dice" data-index="0">⚀</button>
+      <button class="dice" data-index="1">⚀</button>
+      <button class="dice" data-index="2">⚀</button>
+      <button class="dice" data-index="3">⚀</button>
+      <button class="dice" data-index="4">⚀</button>
+    </div>
+  
+    <p id="remainingRollsText">
+      残り3回
+    </p>
+  
+    <button id="rollDiceButton" disabled>
+      サイコロを振る
+    </button>
+  
+    <div id="gamePlayerList"></div>
+  </section>
 
   </main>
 

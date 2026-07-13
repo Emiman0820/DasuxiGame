@@ -217,3 +217,79 @@
   #gamePlayerList {
     margin-top: 30px;
   }
+
+  .turn-information {
+    margin: 24px 0;
+    padding: 18px;
+  
+    background: #f1f5f9;
+    border-radius: 12px;
+  }
+  
+  .turn-information h2 {
+    margin: 8px 0;
+  }
+  
+  #roundText,
+  #turnMessage {
+    margin: 6px 0;
+  }
+  
+  .dice-area {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+  
+    margin: 30px 0 20px;
+  }
+  
+  .dice {
+    width: 82px;
+    height: 82px;
+    padding: 0;
+  
+    border: 3px solid #334155;
+    border-radius: 14px;
+  
+    background: white;
+    color: #111827;
+  
+    font-size: 58px;
+    line-height: 1;
+  
+    cursor: default;
+  }
+  
+  .dice:disabled {
+    background: white;
+    color: #111827;
+    opacity: 1;
+  }
+  
+  #rollDiceButton {
+    width: 100%;
+    margin-top: 10px;
+    padding: 16px;
+  
+    font-size: 18px;
+  }
+  
+  #remainingRollsText {
+    font-weight: bold;
+  }
+  
+  @media (max-width: 600px) {
+    .dice-area {
+      gap: 6px;
+    }
+  
+    .dice {
+      width: 56px;
+      height: 56px;
+  
+      border-width: 2px;
+      border-radius: 10px;
+  
+      font-size: 40px;
+    }
+  }

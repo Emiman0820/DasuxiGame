@@ -14,6 +14,10 @@ import {
     listenRoom,
     startGame
   } from "./room.js";
+
+  import {
+    rollDice
+  } from "./game.js";
   
   const connectionStatus =
     document.getElementById("connectionStatus");
@@ -63,6 +67,34 @@ import {
   const gamePlayerList =
     document.getElementById("gamePlayerList");
   
+    const roundText =
+    document.getElementById("roundText");
+  
+  const currentPlayerText =
+    document.getElementById("currentPlayerText");
+  
+  const turnMessage =
+    document.getElementById("turnMessage");
+  
+  const diceElements =
+    document.querySelectorAll(".dice");
+  
+  const remainingRollsText =
+    document.getElementById("remainingRollsText");
+  
+  const rollDiceButton =
+    document.getElementById("rollDiceButton");
+
+  const DICE_SYMBOLS = [
+    "",
+    "⚀",
+    "⚁",
+    "⚂",
+    "⚃",
+    "⚄",
+    "⚅"
+    ];
+
   let currentUser = null;
   let currentRoomId = null;
   let currentRoom = null;
@@ -132,6 +164,11 @@ import {
   
       return;
     }
+
+    rollDiceButton.addEventListener(
+        "click",
+        handleRollDice
+      );
   
     const playerName =
       playerNameInput.value.trim();
@@ -284,9 +321,14 @@ import {
     }
   
     if (currentRoom.status === "playing") {
-      openGameScreen();
-      return;
-    }
+        if (gameScreen.classList.contains("hidden")) {
+          openGameScreen();
+        } else {
+          renderGameScreen();
+        }
+      
+        return;
+      }
   
     const playerCount = currentPlayers.length;
     const maxPlayers = currentRoom.maxPlayers;
@@ -382,9 +424,16 @@ import {
       startGameButton.textContent =
         "ゲームを開始しています...";
   
+      const playerIds = currentPlayers.map(
+        function (player) {
+          return player.id;
+        }
+      );
+  
       await startGame({
         roomId: currentRoomId,
-        userId: currentUser.uid
+        userId: currentUser.uid,
+        playerIds
       });
     } catch (error) {
       console.error("ゲーム開始エラー:", error);
@@ -404,11 +453,92 @@ import {
     gameRoomId.textContent =
       `ルームID：${currentRoomId}`;
   
+    renderGameScreen();
+  }
+
+  function renderGameScreen() {
+    if (
+      !currentRoom ||
+      currentRoom.status !== "playing"
+    ) {
+      return;
+    }
+  
+    const currentPlayerIndex =
+      currentRoom.currentPlayerIndex ?? 0;
+  
+    const currentPlayer =
+      currentPlayers[currentPlayerIndex];
+  
+    if (!currentPlayer) {
+      currentPlayerText.textContent =
+        "プレイヤー情報を取得中...";
+  
+      rollDiceButton.disabled = true;
+      return;
+    }
+  
+    const isMyTurn =
+      currentPlayer.id === currentUser?.uid;
+  
+    const remainingRolls =
+      currentRoom.remainingRolls ?? 3;
+  
+    roundText.textContent =
+      `ラウンド ${currentRoom.currentRound ?? 1}`;
+  
+    currentPlayerText.textContent =
+      `${currentPlayer.name} の手番`;
+  
+    if (isMyTurn) {
+      turnMessage.textContent =
+        remainingRolls > 0
+          ? "あなたの手番です"
+          : "振り終わりました。役を選んでください";
+    } else {
+      turnMessage.textContent =
+        `${currentPlayer.name}さんの操作を待っています`;
+    }
+  
+    const dice = Array.isArray(currentRoom.dice)
+      ? currentRoom.dice
+      : [1, 1, 1, 1, 1];
+  
+    diceElements.forEach(function (
+      diceElement,
+      index
+    ) {
+      const value = dice[index] ?? 1;
+  
+      diceElement.textContent =
+        DICE_SYMBOLS[value];
+  
+      diceElement.disabled = true;
+    });
+  
+    remainingRollsText.textContent =
+      `残り${remainingRolls}回`;
+  
+    rollDiceButton.disabled =
+      !isMyTurn || remainingRolls <= 0;
+  
+    rollDiceButton.textContent =
+      remainingRolls > 0
+        ? "サイコロを振る"
+        : "役を選んでください";
+  
     gamePlayerList.innerHTML = currentPlayers
       .map(function (player, index) {
-        const turnLabel =
-          index === currentRoom.currentPlayerIndex
-            ? `<span class="turn-label">最初の手番</span>`
+        const isCurrent =
+          index === currentPlayerIndex;
+  
+        const turnLabel = isCurrent
+          ? `<span class="turn-label">手番</span>`
+          : "";
+  
+        const ownLabel =
+          player.id === currentUser?.uid
+            ? `<span class="own-label">あなた</span>`
             : "";
   
         return `
@@ -418,9 +548,40 @@ import {
               ${escapeHtml(player.name)}
             </span>
   
-            ${turnLabel}
+            <span class="player-labels">
+              ${ownLabel}
+              ${turnLabel}
+            </span>
           </div>
         `;
       })
       .join("");
+  }
+
+  async function handleRollDice() {
+    if (!currentUser || !currentRoomId) {
+      turnMessage.textContent =
+        "ゲーム情報を確認できません";
+  
+      return;
+    }
+  
+    try {
+      rollDiceButton.disabled = true;
+      rollDiceButton.textContent =
+        "振っています...";
+  
+      await rollDice({
+        roomId: currentRoomId,
+        userId: currentUser.uid
+      });
+    } catch (error) {
+      console.error("サイコロ処理エラー:", error);
+  
+      turnMessage.textContent =
+        error.message ||
+        "サイコロを振れませんでした";
+  
+      renderGameScreen();
+    }
   }

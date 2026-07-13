@@ -239,7 +239,8 @@ import {
  */
 export async function startGame({
     roomId,
-    userId
+    userId,
+    playerIds
   }) {
     if (!roomId) {
       throw new Error("ルームIDを確認できません");
@@ -247,6 +248,12 @@ export async function startGame({
   
     if (!userId) {
       throw new Error("ユーザー情報を確認できません");
+    }
+
+    if (!Array.isArray(playerIds) || playerIds.length < 2) {
+        throw new Error(
+          "プレイヤー情報を確認できません"
+        );
     }
   
     const roomReference = doc(
@@ -286,6 +293,7 @@ export async function startGame({
       transaction.update(roomReference, {
         status: "playing",
         startedAt: serverTimestamp(),
+        playerIds: playerIds,
         currentPlayerIndex: 0,
         currentRound: 1,
         remainingRolls: 3,
@@ -296,7 +304,8 @@ export async function startGame({
           false,
           false,
           false
-        ]
+        ],
+        hasRolled: false
       });
     });
   }
