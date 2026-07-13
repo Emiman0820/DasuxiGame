@@ -1288,9 +1288,7 @@ async function showScoreEffect({
     isScoreEffectPlaying = false;
 }
 
-function renderAllPlayerScores(
-    currentPlayerIndex
-) {
+function renderAllPlayerScores(currentPlayerIndex) {
     if (
         !allScoreBoard ||
         currentPlayers.length === 0
@@ -1301,63 +1299,43 @@ function renderAllPlayerScores(
     const headerHtml = `
       <thead>
         <tr>
-          <th class="category-column">
+          <th class="score-category-header">
             役
           </th>
 
           ${currentPlayers
-            .map(function (player, index) {
-                const isCurrent =
-                    index === currentPlayerIndex;
+              .map(function (player, index) {
+                  const isCurrent =
+                      index === currentPlayerIndex;
 
-                const isMe =
-                    player.id === currentUser?.uid;
+                  return `
+                    <th class="
+                      score-player-header
+                      ${isCurrent ? "current-score-player" : ""}
+                    ">
+                      ${escapeHtml(player.name)}
 
-                const columnClasses = [
-                    "player-score-header",
-                    isCurrent
-                        ? "current-player-column"
-                        : "",
-                    isMe
-                        ? "own-player-column"
-                        : ""
-                ]
-                    .filter(Boolean)
-                    .join(" ");
-
-                return `
-                    <th class="${columnClasses}">
-                      <span class="score-player-name">
-                        ${escapeHtml(player.name)}
-                      </span>
-
-                      ${isCurrent
-                        ? `<span class="score-turn-label">
+                      ${
+                          isCurrent
+                              ? `<span class="score-turn-mark">
                                    手番
                                  </span>`
-                        : ""
-                    }
-
-                      ${isMe
-                        ? `<span class="score-own-label">
-                                   あなた
-                                 </span>`
-                        : ""
-                    }
+                              : ""
+                      }
                     </th>
                   `;
-            })
-            .join("")}
+              })
+              .join("")}
         </tr>
       </thead>
     `;
 
-    const categoryRowsHtml =
+    const scoreRowsHtml =
         SCORE_CATEGORIES
             .map(function (category) {
                 return `
                   <tr>
-                    <th class="category-name">
+                    <th class="score-category-name">
                       ${escapeHtml(category.label)}
                     </th>
 
@@ -1365,7 +1343,7 @@ function renderAllPlayerScores(
                         .map(function (player, index) {
                             const score =
                                 player.scores?.[
-                                category.key
+                                    category.key
                                 ];
 
                             const isConfirmed =
@@ -1375,23 +1353,16 @@ function renderAllPlayerScores(
                             const isCurrent =
                                 index === currentPlayerIndex;
 
-                            const cellClasses = [
-                                "player-score-cell",
-                                isConfirmed
-                                    ? "score-confirmed-cell"
-                                    : "score-unused-cell",
-                                isCurrent
-                                    ? "current-player-column"
-                                    : ""
-                            ]
-                                .filter(Boolean)
-                                .join(" ");
-
                             return `
-                              <td class="${cellClasses}">
-                                ${isConfirmed
-                                    ? `${score}点`
-                                    : "－"
+                              <td class="
+                                score-player-value
+                                ${isCurrent ? "current-score-player" : ""}
+                                ${isConfirmed ? "" : "score-empty"}
+                              ">
+                                ${
+                                    isConfirmed
+                                        ? score
+                                        : "－"
                                 }
                               </td>
                             `;
@@ -1403,8 +1374,8 @@ function renderAllPlayerScores(
             .join("");
 
     const totalRowHtml = `
-      <tr class="total-score-row">
-        <th class="category-name">
+      <tr class="score-total-row">
+        <th class="score-category-name">
           合計
         </th>
 
@@ -1420,13 +1391,10 @@ function renderAllPlayerScores(
 
                 return `
                   <td class="
-                    player-total-cell
-                    ${isCurrent
-                        ? "current-player-column"
-                        : ""
-                    }
+                    score-total-value
+                    ${isCurrent ? "current-score-player" : ""}
                   ">
-                    ${totalScore}点
+                    ${totalScore}
                   </td>
                 `;
             })
@@ -1438,10 +1406,28 @@ function renderAllPlayerScores(
       ${headerHtml}
 
       <tbody>
-        ${categoryRowsHtml}
+        ${scoreRowsHtml}
         ${totalRowHtml}
       </tbody>
     `;
+}
+
+function calculateConfirmedTotal(scores) {
+    if (!scores) {
+        return 0;
+    }
+
+    return SCORE_CATEGORIES.reduce(
+        function (total, category) {
+            const score =
+                scores[category.key];
+
+            return typeof score === "number"
+                ? total + score
+                : total;
+        },
+        0
+    );
 }
 
 function calculateConfirmedTotal(scores) {
