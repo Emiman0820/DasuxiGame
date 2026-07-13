@@ -159,6 +159,9 @@ const scoreEffectTitle =
 const scoreEffectValue =
     document.getElementById("scoreEffectValue");
 
+const allScoreBoard =
+    document.getElementById("allScoreBoard");
+
 const DICE_PIP_POSITIONS = {
     1: ["center"],
 
@@ -783,7 +786,7 @@ function renderGameScreen() {
               ${index + 1}.
               ${escapeHtml(player.name)}
             </span>
-  
+
             <span class="player-labels">
               ${ownLabel}
               ${turnLabel}
@@ -792,6 +795,10 @@ function renderGameScreen() {
         `;
         })
         .join("");
+
+    renderAllPlayerScores(
+        currentPlayerIndex
+    );
 }
 
 async function handleRollDice() {
@@ -1279,4 +1286,183 @@ async function showScoreEffect({
     scoreEffect.classList.add("hidden");
 
     isScoreEffectPlaying = false;
+}
+
+function renderAllPlayerScores(
+    currentPlayerIndex
+) {
+    if (
+        !allScoreBoard ||
+        currentPlayers.length === 0
+    ) {
+        return;
+    }
+
+    const headerHtml = `
+      <thead>
+        <tr>
+          <th class="category-column">
+            役
+          </th>
+
+          ${currentPlayers
+            .map(function (player, index) {
+                const isCurrent =
+                    index === currentPlayerIndex;
+
+                const isMe =
+                    player.id === currentUser?.uid;
+
+                const columnClasses = [
+                    "player-score-header",
+                    isCurrent
+                        ? "current-player-column"
+                        : "",
+                    isMe
+                        ? "own-player-column"
+                        : ""
+                ]
+                    .filter(Boolean)
+                    .join(" ");
+
+                return `
+                    <th class="${columnClasses}">
+                      <span class="score-player-name">
+                        ${escapeHtml(player.name)}
+                      </span>
+
+                      ${isCurrent
+                        ? `<span class="score-turn-label">
+                                   手番
+                                 </span>`
+                        : ""
+                    }
+
+                      ${isMe
+                        ? `<span class="score-own-label">
+                                   あなた
+                                 </span>`
+                        : ""
+                    }
+                    </th>
+                  `;
+            })
+            .join("")}
+        </tr>
+      </thead>
+    `;
+
+    const categoryRowsHtml =
+        SCORE_CATEGORIES
+            .map(function (category) {
+                return `
+                  <tr>
+                    <th class="category-name">
+                      ${escapeHtml(category.label)}
+                    </th>
+
+                    ${currentPlayers
+                        .map(function (player, index) {
+                            const score =
+                                player.scores?.[
+                                category.key
+                                ];
+
+                            const isConfirmed =
+                                score !== undefined &&
+                                score !== null;
+
+                            const isCurrent =
+                                index === currentPlayerIndex;
+
+                            const cellClasses = [
+                                "player-score-cell",
+                                isConfirmed
+                                    ? "score-confirmed-cell"
+                                    : "score-unused-cell",
+                                isCurrent
+                                    ? "current-player-column"
+                                    : ""
+                            ]
+                                .filter(Boolean)
+                                .join(" ");
+
+                            return `
+                              <td class="${cellClasses}">
+                                ${isConfirmed
+                                    ? `${score}点`
+                                    : "－"
+                                }
+                              </td>
+                            `;
+                        })
+                        .join("")}
+                  </tr>
+                `;
+            })
+            .join("");
+
+    const totalRowHtml = `
+      <tr class="total-score-row">
+        <th class="category-name">
+          合計
+        </th>
+
+        ${currentPlayers
+            .map(function (player, index) {
+                const totalScore =
+                    calculateConfirmedTotal(
+                        player.scores
+                    );
+
+                const isCurrent =
+                    index === currentPlayerIndex;
+
+                return `
+                  <td class="
+                    player-total-cell
+                    ${isCurrent
+                        ? "current-player-column"
+                        : ""
+                    }
+                  ">
+                    ${totalScore}点
+                  </td>
+                `;
+            })
+            .join("")}
+      </tr>
+    `;
+
+    allScoreBoard.innerHTML = `
+      ${headerHtml}
+
+      <tbody>
+        ${categoryRowsHtml}
+        ${totalRowHtml}
+      </tbody>
+    `;
+}
+
+function calculateConfirmedTotal(scores) {
+    if (!scores) {
+        return 0;
+    }
+
+    return SCORE_CATEGORIES.reduce(
+        function (total, category) {
+            const score =
+                scores[category.key];
+
+            if (
+                typeof score !== "number" ||
+                !Number.isFinite(score)
+            ) {
+                return total;
+            }
+
+            return total + score;
+        },
+        0
+    );
 }
