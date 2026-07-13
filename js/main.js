@@ -1,116 +1,165 @@
 import {
     onAuthStateChanged,
     signInAnonymously
-  } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
-  
-  import {
+} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+
+import {
     auth
-  } from "./firebase-config.js";
-  
-  import {
+} from "./firebase-config.js";
+
+import {
     createRoom,
     joinRoom,
     listenPlayers,
     listenRoom,
     startGame
-  } from "./room.js";
+} from "./room.js";
 
-  import {
+import {
     rollDice,
-    toggleDiceKeep
-  } from "./game.js";
+    toggleDiceKeep,
+    confirmScore
+} from "./game.js";
 
-  import {
+import {
     calculateScoreCandidates,
     SCORE_CATEGORIES
-  } from "./score.js";
-  
-  const connectionStatus =
+} from "./score.js";
+
+//エフェクトを追加する場合は以下に追加する
+const SCORE_EFFECTS = {
+    yacht: {
+        minScore: 50,
+        title: "YACHT!!",
+        className: "effect-yacht",
+        duration: 2500
+    },
+
+    fullHouse: {
+        minScore: 1,
+        title: "FULL HOUSE!",
+        className: "effect-full-house",
+        duration: 1600
+    },
+
+    largeStraight: {
+        minScore: 30,
+        title: "LARGE STRAIGHT!",
+        className: "effect-large-straight",
+        duration: 1800
+    },
+
+    fourCard: {
+        minScore: 1,
+        title: "FOUR OF A KIND!",
+        className: "effect-four-card",
+        duration: 1500
+    }
+};
+
+const connectionStatus =
     document.getElementById("connectionStatus");
-  
-  const message =
+
+const message =
     document.getElementById("message");
-  
-  const playerNameInput =
+
+const playerNameInput =
     document.getElementById("playerName");
-  
-  const maxPlayersSelect =
+
+const maxPlayersSelect =
     document.getElementById("maxPlayers");
-  
-  const roomIdInput =
+
+const roomIdInput =
     document.getElementById("roomIdInput");
-  
-  const createRoomButton =
+
+const createRoomButton =
     document.getElementById("createRoomButton");
-  
-  const joinRoomButton =
+
+const joinRoomButton =
     document.getElementById("joinRoomButton");
-  
-  const homeScreen =
+
+const homeScreen =
     document.getElementById("homeScreen");
-  
-  const waitingRoomScreen =
+
+const waitingRoomScreen =
     document.getElementById("waitingRoomScreen");
-  
-  const displayRoomId =
+
+const displayRoomId =
     document.getElementById("displayRoomId");
-  
-  const waitingMessage =
+
+const waitingMessage =
     document.getElementById("waitingMessage");
-  
-  const playerList =
+
+const playerList =
     document.getElementById("playerList");
 
-  const startGameButton =
+const startGameButton =
     document.getElementById("startGameButton");
-  
-  const gameScreen =
+
+const gameScreen =
     document.getElementById("gameScreen");
-  
-  const gameRoomId =
+
+const gameRoomId =
     document.getElementById("gameRoomId");
-  
-  const gamePlayerList =
+
+const gamePlayerList =
     document.getElementById("gamePlayerList");
-  
-    const roundText =
+
+const roundText =
     document.getElementById("roundText");
-  
-  const currentPlayerText =
+
+const currentPlayerText =
     document.getElementById("currentPlayerText");
-  
-  const turnMessage =
+
+const turnMessage =
     document.getElementById("turnMessage");
-  
-  const diceElements =
+
+const diceElements =
     document.querySelectorAll(".dice");
-  
-  const remainingRollsText =
+
+const remainingRollsText =
     document.getElementById("remainingRollsText");
-  
-  const rollDiceButton =
+
+const rollDiceButton =
     document.getElementById("rollDiceButton");
 
-  const diceRollSound =
+const diceRollSound =
     document.getElementById("diceRollSound");
 
-  const scoreBoard =
+const scoreBoard =
     document.getElementById("scoreBoard");
-  
-  const scoreHelp =
+
+const scoreHelp =
     document.getElementById("scoreHelp");
 
-  const DICE_SYMBOLS = [
-    "",
-    "⚀",
-    "⚁",
-    "⚂",
-    "⚃",
-    "⚄",
-    "⚅"
-    ];
+const scoreConfirmModal =
+    document.getElementById("scoreConfirmModal");
 
-  const DICE_PIP_POSITIONS = {
+const confirmCategoryName =
+    document.getElementById("confirmCategoryName");
+
+const confirmScoreValue =
+    document.getElementById("confirmScoreValue");
+
+const cancelScoreButton =
+    document.getElementById("cancelScoreButton");
+
+const confirmScoreButton =
+    document.getElementById("confirmScoreButton");
+
+const scoreEffect =
+    document.getElementById("scoreEffect");
+
+const scoreEffectPlayer =
+    document.getElementById("scoreEffectPlayer");
+
+const scoreEffectTitle =
+    document.getElementById("scoreEffectTitle");
+
+const scoreEffectValue =
+    document.getElementById("scoreEffectValue");
+
+const DICE_PIP_POSITIONS = {
     1: ["center"],
 
     2: [
@@ -147,311 +196,331 @@ import {
         "middle-right",
         "bottom-right"
     ]
-  };
+};
 
-  function renderDiceFace(
+function renderDiceFace(
     diceElement,
     value
-  ) {
+) {
     const positions =
-      DICE_PIP_POSITIONS[value] ??
-      DICE_PIP_POSITIONS[1];
-  
+        DICE_PIP_POSITIONS[value] ??
+        DICE_PIP_POSITIONS[1];
+
     diceElement.innerHTML = positions
-      .map(function (position) {
-        return `
+        .map(function (position) {
+            return `
           <span class="pip ${position}"></span>
         `;
-      })
-      .join("");
-  
+        })
+        .join("");
+
     diceElement.setAttribute(
-      "aria-label",
-      `サイコロの目 ${value}`
+        "aria-label",
+        `サイコロの目 ${value}`
     );
-  }
+}
 
-  let currentUser = null;
-  let currentRoomId = null;
-  let currentRoom = null;
-  let currentPlayers = [];
-  
-  let unsubscribeRoom = null;
-  let unsubscribePlayers = null;
+let currentUser = null;
+let currentRoomId = null;
+let currentRoom = null;
+let currentPlayers = [];
 
-  let displayedRollNumber = 0;
-  let isDiceAnimating = false;
-  
-  createRoomButton.disabled = true;
-  joinRoomButton.disabled = true;
-  
-  async function loginAnonymously() {
+let unsubscribeRoom = null;
+let unsubscribePlayers = null;
+
+let displayedRollNumber = 0;
+let isDiceAnimating = false;
+
+let pendingScoreCategory = null;
+let displayedScoreEventNumber = 0;
+let isScoreConfirming = false;
+let isScoreEffectPlaying = false;
+
+createRoomButton.disabled = true;
+joinRoomButton.disabled = true;
+
+async function loginAnonymously() {
     try {
-      await signInAnonymously(auth);
+        await signInAnonymously(auth);
     } catch (error) {
-      console.error("匿名ログインエラー:", error);
-  
-      connectionStatus.textContent =
-        "Firebaseへの接続に失敗しました";
-  
-      message.textContent =
-        "接続に失敗しました";
+        console.error("匿名ログインエラー:", error);
+
+        connectionStatus.textContent =
+            "Firebaseへの接続に失敗しました";
+
+        message.textContent =
+            "接続に失敗しました";
     }
-  }
-  
-  onAuthStateChanged(auth, function (user) {
+}
+
+onAuthStateChanged(auth, function (user) {
     if (!user) {
-      return;
+        return;
     }
-  
+
     currentUser = user;
-  
+
     console.log("ユーザーID:", user.uid);
-  
+
     connectionStatus.textContent =
-      "Firebaseに接続しました";
-  
+        "Firebaseに接続しました";
+
     createRoomButton.disabled = false;
     joinRoomButton.disabled = false;
-  });
-  
-  createRoomButton.addEventListener(
+});
+
+createRoomButton.addEventListener(
     "click",
     handleCreateRoom
-  );
-  
-  joinRoomButton.addEventListener(
+);
+
+joinRoomButton.addEventListener(
     "click",
     handleJoinRoom
-  );
+);
 
-  startGameButton.addEventListener(
+startGameButton.addEventListener(
     "click",
     handleStartGame
-  );
+);
 
-  rollDiceButton.addEventListener(
+rollDiceButton.addEventListener(
     "click",
     handleRollDice
-  );
+);
 
-  diceElements.forEach(function (
+scoreBoard.addEventListener(
+    "click",
+    handleScoreBoardClick
+);
+
+cancelScoreButton.addEventListener(
+    "click",
+    closeScoreConfirmModal
+);
+
+confirmScoreButton.addEventListener(
+    "click",
+    handleConfirmScore
+);
+
+diceElements.forEach(function (
     diceElement,
     index
-  ) {
+) {
     diceElement.addEventListener(
-      "click",
-      function () {
-        handleToggleDiceKeep(index);
-      }
+        "click",
+        function () {
+            handleToggleDiceKeep(index);
+        }
     );
-  });
-  
-  roomIdInput.addEventListener("input", function () {
+});
+
+roomIdInput.addEventListener("input", function () {
     roomIdInput.value = roomIdInput.value
-      .toUpperCase()
-      .replace(/[^A-Z0-9]/g, "");
-  });
-  
-  async function handleCreateRoom() {
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, "");
+});
+
+async function handleCreateRoom() {
     if (!currentUser) {
-      message.textContent =
-        "Firebaseへの接続を確認しています";
-  
-      return;
+        message.textContent =
+            "Firebaseへの接続を確認しています";
+
+        return;
     }
 
     const playerName =
-      playerNameInput.value.trim();
-  
+        playerNameInput.value.trim();
+
     const maxPlayers =
-      Number(maxPlayersSelect.value);
-  
+        Number(maxPlayersSelect.value);
+
     if (!validatePlayerName(playerName)) {
-      return;
+        return;
     }
-  
+
     setHomeButtonsDisabled(true);
     message.textContent =
-      "部屋を作成しています...";
-  
+        "部屋を作成しています...";
+
     try {
-      const roomId = await createRoom({
-        hostId: currentUser.uid,
-        playerName,
-        maxPlayers
-      });
-  
-      openWaitingRoom(roomId);
+        const roomId = await createRoom({
+            hostId: currentUser.uid,
+            playerName,
+            maxPlayers
+        });
+
+        openWaitingRoom(roomId);
     } catch (error) {
-      console.error("部屋作成エラー:", error);
-  
-      message.textContent =
-        error.message || "部屋の作成に失敗しました";
-  
-      setHomeButtonsDisabled(false);
+        console.error("部屋作成エラー:", error);
+
+        message.textContent =
+            error.message || "部屋の作成に失敗しました";
+
+        setHomeButtonsDisabled(false);
     }
-  }
-  
-  async function handleJoinRoom() {
+}
+
+async function handleJoinRoom() {
     if (!currentUser) {
-      message.textContent =
-        "Firebaseへの接続を確認しています";
-  
-      return;
+        message.textContent =
+            "Firebaseへの接続を確認しています";
+
+        return;
     }
-  
+
     const playerName =
-      playerNameInput.value.trim();
-  
+        playerNameInput.value.trim();
+
     const roomId =
-      roomIdInput.value.trim().toUpperCase();
-  
+        roomIdInput.value.trim().toUpperCase();
+
     if (!validatePlayerName(playerName)) {
-      return;
+        return;
     }
-  
+
     if (roomId.length !== 6) {
-      message.textContent =
-        "6文字のルームIDを入力してください";
-  
-      roomIdInput.focus();
-      return;
+        message.textContent =
+            "6文字のルームIDを入力してください";
+
+        roomIdInput.focus();
+        return;
     }
-  
+
     setHomeButtonsDisabled(true);
     message.textContent =
-      "部屋に参加しています...";
-  
+        "部屋に参加しています...";
+
     try {
-      const joinedRoomId = await joinRoom({
-        roomId,
-        playerId: currentUser.uid,
-        playerName
-      });
-  
-      openWaitingRoom(joinedRoomId);
+        const joinedRoomId = await joinRoom({
+            roomId,
+            playerId: currentUser.uid,
+            playerName
+        });
+
+        openWaitingRoom(joinedRoomId);
     } catch (error) {
-      console.error("部屋参加エラー:", error);
-  
-      message.textContent =
-        error.message || "部屋への参加に失敗しました";
-  
-      setHomeButtonsDisabled(false);
+        console.error("部屋参加エラー:", error);
+
+        message.textContent =
+            error.message || "部屋への参加に失敗しました";
+
+        setHomeButtonsDisabled(false);
     }
-  }
-  
-  function validatePlayerName(playerName) {
+}
+
+function validatePlayerName(playerName) {
     if (playerName) {
-      return true;
+        return true;
     }
-  
+
     message.textContent =
-      "プレイヤー名を入力してください";
-  
+        "プレイヤー名を入力してください";
+
     playerNameInput.focus();
-  
+
     return false;
-  }
-  
-  function openWaitingRoom(roomId) {
+}
+
+function openWaitingRoom(roomId) {
     currentRoomId = roomId;
-  
+
     homeScreen.classList.add("hidden");
     waitingRoomScreen.classList.remove("hidden");
-  
+
     displayRoomId.textContent = roomId;
-  
+
     startRoomListeners(roomId);
-  }
-  
-  function startRoomListeners(roomId) {
+}
+
+function startRoomListeners(roomId) {
     stopRoomListeners();
-  
+
     unsubscribeRoom = listenRoom(
-      roomId,
-      function (room) {
-        if (!room) {
-          waitingMessage.textContent =
-            "部屋が見つかりません";
-  
-          return;
-        }
-  
-        currentRoom = room;
-        renderWaitingRoom();
-      },
-      handleListenerError
+        roomId,
+        function (room) {
+            if (!room) {
+                waitingMessage.textContent =
+                    "部屋が見つかりません";
+
+                return;
+            }
+
+            currentRoom = room;
+            renderWaitingRoom();
+        },
+        handleListenerError
     );
-  
+
     unsubscribePlayers = listenPlayers(
-      roomId,
-      function (players) {
-        currentPlayers = players;
-        renderWaitingRoom();
-      },
-      handleListenerError
+        roomId,
+        function (players) {
+            currentPlayers = players;
+            renderWaitingRoom();
+        },
+        handleListenerError
     );
-  }
-  
-  function stopRoomListeners() {
+}
+
+function stopRoomListeners() {
     if (unsubscribeRoom) {
-      unsubscribeRoom();
-      unsubscribeRoom = null;
+        unsubscribeRoom();
+        unsubscribeRoom = null;
     }
-  
+
     if (unsubscribePlayers) {
-      unsubscribePlayers();
-      unsubscribePlayers = null;
+        unsubscribePlayers();
+        unsubscribePlayers = null;
     }
-  }
-  
-  function renderWaitingRoom() {
+}
+
+function renderWaitingRoom() {
     if (!currentRoom) {
-      return;
+        return;
     }
-  
+
     if (currentRoom.status === "playing") {
         if (gameScreen.classList.contains("hidden")) {
-          openGameScreen();
+            openGameScreen();
         } else {
-          renderGameScreen();
+            renderGameScreen();
         }
-      
+
         return;
-      }
-  
+    }
+
     const playerCount = currentPlayers.length;
     const maxPlayers = currentRoom.maxPlayers;
-  
+
     const isHost =
-      currentRoom.hostId === currentUser?.uid;
-  
+        currentRoom.hostId === currentUser?.uid;
+
     const isFull =
-      playerCount >= maxPlayers;
-  
+        playerCount >= maxPlayers;
+
     if (isFull) {
-      waitingMessage.textContent =
-        isHost
-          ? "全員揃いました。ゲームを開始できます"
-          : "全員揃いました。ホストの開始を待っています";
+        waitingMessage.textContent =
+            isHost
+                ? "全員揃いました。ゲームを開始できます"
+                : "全員揃いました。ホストの開始を待っています";
     } else {
-      waitingMessage.textContent =
-        `プレイヤーを待っています（${playerCount} / ${maxPlayers}）`;
+        waitingMessage.textContent =
+            `プレイヤーを待っています（${playerCount} / ${maxPlayers}）`;
     }
-  
+
     playerList.innerHTML = currentPlayers
-      .map(function (player, index) {
-        const hostLabel = player.isHost
-          ? `<span class="host-label">ホスト</span>`
-          : "";
-  
-        const ownLabel =
-          player.id === currentUser?.uid
-            ? `<span class="own-label">あなた</span>`
-            : "";
-  
-        return `
+        .map(function (player, index) {
+            const hostLabel = player.isHost
+                ? `<span class="host-label">ホスト</span>`
+                : "";
+
+            const ownLabel =
+                player.id === currentUser?.uid
+                    ? `<span class="own-label">あなた</span>`
+                    : "";
+
+            return `
           <div class="player-card">
             <span>
               ${index + 1}.
@@ -464,99 +533,122 @@ import {
             </span>
           </div>
         `;
-      })
-      .join("");
-  
+        })
+        .join("");
+
     if (isHost) {
-      startGameButton.classList.remove("hidden");
-      startGameButton.disabled = !isFull;
-  
-      startGameButton.textContent = isFull
-        ? "ゲーム開始"
-        : `あと${maxPlayers - playerCount}人`;
+        startGameButton.classList.remove("hidden");
+        startGameButton.disabled = !isFull;
+
+        startGameButton.textContent = isFull
+            ? "ゲーム開始"
+            : `あと${maxPlayers - playerCount}人`;
     } else {
-      startGameButton.classList.add("hidden");
+        startGameButton.classList.add("hidden");
     }
-  }
-  
-  function handleListenerError(error) {
+}
+
+function handleListenerError(error) {
     console.error("リアルタイム監視エラー:", error);
-  
+
     waitingMessage.textContent =
-      "部屋情報の取得に失敗しました";
-  }
-  
-  function setHomeButtonsDisabled(disabled) {
+        "部屋情報の取得に失敗しました";
+}
+
+function setHomeButtonsDisabled(disabled) {
     createRoomButton.disabled = disabled;
     joinRoomButton.disabled = disabled;
-  }
-  
-  function escapeHtml(value) {
+}
+
+function escapeHtml(value) {
     return value
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
-  }
-  
-  loginAnonymously();
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
 
-  async function handleStartGame() {
+loginAnonymously();
+
+async function handleStartGame() {
     if (!currentUser || !currentRoomId) {
-      waitingMessage.textContent =
-        "部屋情報を確認できません";
-  
-      return;
-    }
-  
-    try {
-      startGameButton.disabled = true;
-      startGameButton.textContent =
-        "ゲームを開始しています...";
-  
-      const playerIds = currentPlayers.map(
-        function (player) {
-          return player.id;
-        }
-      );
-  
-      await startGame({
-        roomId: currentRoomId,
-        userId: currentUser.uid,
-        playerIds
-      });
-    } catch (error) {
-      console.error("ゲーム開始エラー:", error);
-  
-      waitingMessage.textContent =
-        error.message ||
-        "ゲームの開始に失敗しました";
-  
-      renderWaitingRoom();
-    }
-  }
+        waitingMessage.textContent =
+            "部屋情報を確認できません";
 
-  function openGameScreen() {
+        return;
+    }
+
+    try {
+        startGameButton.disabled = true;
+        startGameButton.textContent =
+            "ゲームを開始しています...";
+
+        const playerIds = currentPlayers.map(
+            function (player) {
+                return player.id;
+            }
+        );
+
+        await startGame({
+            roomId: currentRoomId,
+            userId: currentUser.uid,
+            playerIds
+        });
+    } catch (error) {
+        console.error("ゲーム開始エラー:", error);
+
+        waitingMessage.textContent =
+            error.message ||
+            "ゲームの開始に失敗しました";
+
+        renderWaitingRoom();
+    }
+}
+
+function openGameScreen() {
     waitingRoomScreen.classList.add("hidden");
     gameScreen.classList.remove("hidden");
-  
-    gameRoomId.textContent =
-      `ルームID：${currentRoomId}`;
-  
-    renderGameScreen();
-  }
 
-  function renderGameScreen() {
+    gameRoomId.textContent =
+        `ルームID：${currentRoomId}`;
+
+    renderGameScreen();
+}
+
+function renderGameScreen() {
     if (
-      !currentRoom ||
-      currentRoom.status !== "playing"
+        !currentRoom ||
+        currentRoom.status !== "playing"
     ) {
-      return;
+        return;
+    }
+
+    const scoreEventNumber =
+        currentRoom.scoreEventNumber ?? 0;
+
+    if (
+        scoreEventNumber >
+        displayedScoreEventNumber &&
+        !isScoreEffectPlaying
+    ) {
+        displayedScoreEventNumber =
+            scoreEventNumber;
+
+        showScoreEffect({
+            playerId:
+                currentRoom.lastScorePlayerId,
+
+            categoryKey:
+                currentRoom.lastScoreCategory,
+
+            score:
+                currentRoom.lastScoreValue
+        });
     }
 
     const rollNumber =
-         currentRoom.rollNumber ?? 0;
+        currentRoom.rollNumber ?? 0;
 
     if (
         rollNumber > displayedRollNumber &&
@@ -564,124 +656,128 @@ import {
     ) {
         displayedRollNumber = rollNumber;
 
-    const finalDice =
-        Array.isArray(currentRoom.dice)
-        ? [...currentRoom.dice]
-        : [1, 1, 1, 1, 1];
+        const finalDice =
+            Array.isArray(currentRoom.dice)
+                ? [...currentRoom.dice]
+                : [1, 1, 1, 1, 1];
 
         animateDiceRoll(finalDice);
         return;
     }
-  
+
     const currentPlayerIndex =
-      currentRoom.currentPlayerIndex ?? 0;
-  
+        currentRoom.currentPlayerIndex ?? 0;
+
     const currentPlayer =
-      currentPlayers[currentPlayerIndex];
-  
+        currentPlayers[currentPlayerIndex];
+
     if (!currentPlayer) {
-      currentPlayerText.textContent =
-        "プレイヤー情報を取得中...";
-  
-      rollDiceButton.disabled = true;
-      return;
+        currentPlayerText.textContent =
+            "プレイヤー情報を取得中...";
+
+        rollDiceButton.disabled = true;
+        return;
     }
-  
+
     const isMyTurn =
-      currentPlayer.id === currentUser?.uid;
-  
+        currentPlayer.id === currentUser?.uid;
+
     const remainingRolls =
-      currentRoom.remainingRolls ?? 3;
-  
+        currentRoom.remainingRolls ?? 3;
+
     roundText.textContent =
-      `ラウンド ${currentRoom.currentRound ?? 1}`;
-  
+        `ラウンド ${currentRoom.currentRound ?? 1}`;
+
     currentPlayerText.textContent =
-      `${currentPlayer.name} の手番`;
-  
+        `${currentPlayer.name} の手番`;
+
     if (isMyTurn) {
-      turnMessage.textContent =
-        remainingRolls > 0
-          ? "あなたの手番です"
-          : "振り終わりました。役を選んでください";
+        turnMessage.textContent =
+            remainingRolls > 0
+                ? "あなたの手番です"
+                : "振り終わりました。役を選んでください";
     } else {
-      turnMessage.textContent =
-        `${currentPlayer.name}さんの操作を待っています`;
+        turnMessage.textContent =
+            `${currentPlayer.name}さんの操作を待っています`;
     }
-  
+
     const dice = Array.isArray(currentRoom.dice)
         ? currentRoom.dice
         : [1, 1, 1, 1, 1];
 
     const keptDice =
-    Array.isArray(currentRoom.keptDice)
-        ? currentRoom.keptDice
-        : [false, false, false, false, false];
+        Array.isArray(currentRoom.keptDice)
+            ? currentRoom.keptDice
+            : [false, false, false, false, false];
 
     const hasRolled =
-    currentRoom.hasRolled === true;
+        currentRoom.hasRolled === true;
 
     diceElements.forEach(function (
-    diceElement,
-    index
-    ) {
-    const value = dice[index] ?? 1;
-    const isKept = keptDice[index];
-
-    if (!isDiceAnimating) {
-        renderDiceFace(
         diceElement,
-        value
+        index
+    ) {
+        const value = dice[index] ?? 1;
+        const isKept = keptDice[index];
+
+        if (!isDiceAnimating) {
+            renderDiceFace(
+                diceElement,
+                value
+            );
+        }
+
+        diceElement.classList.toggle(
+            "kept",
+            isKept
         );
-    }
 
-    diceElement.classList.toggle(
-        "kept",
-        isKept
-    );
+        diceElement.disabled =
+            !isMyTurn ||
+            !hasRolled ||
+            isDiceAnimating;
 
-    diceElement.disabled =
-        !isMyTurn ||
-        !hasRolled ||
-        isDiceAnimating;
-
-    diceElement.title = isKept
-        ? "クリックしてキープ解除"
-        : "クリックしてキープ";
+        diceElement.title = isKept
+            ? "クリックしてキープ解除"
+            : "クリックしてキープ";
     });
-  
+
     remainingRollsText.textContent =
-      `残り${remainingRolls}回`;
-  
+        `残り${remainingRolls}回`;
+
     rollDiceButton.disabled =
-      !isMyTurn || remainingRolls <= 0;
-  
+        !isMyTurn || remainingRolls <= 0;
+
     rollDiceButton.textContent =
-      remainingRolls > 0
-        ? "サイコロを振る"
-        : "役を選んでください";
+        remainingRolls > 0
+            ? "サイコロを振る"
+            : "役を選んでください";
+
+    const confirmedScores =
+        currentPlayer.scores ?? {};
 
     renderScoreBoard({
         dice,
         isMyTurn,
-        hasRolled
+        hasRolled,
+        confirmedScores
     });
 
     gamePlayerList.innerHTML = currentPlayers
-      .map(function (player, index) {
-        const isCurrent =
-          index === currentPlayerIndex;
-  
-        const turnLabel = isCurrent
-          ? `<span class="turn-label">手番</span>`
-          : "";
-  
-        const ownLabel =
-          player.id === currentUser?.uid
-            ? `<span class="own-label">あなた</span>`
-            : "";
-  
-        return `
+        .map(function (player, index) {
+            const isCurrent =
+                index === currentPlayerIndex;
+
+            const turnLabel = isCurrent
+                ? `<span class="turn-label">手番</span>`
+                : "";
+
+            const ownLabel =
+                player.id === currentUser?.uid
+                    ? `<span class="own-label">あなた</span>`
+                    : "";
+
+            return `
           <div class="player-card">
             <span>
               ${index + 1}.
@@ -694,259 +790,271 @@ import {
             </span>
           </div>
         `;
-      })
-      .join("");
-  }
+        })
+        .join("");
+}
 
-  async function handleRollDice() {
+async function handleRollDice() {
     if (!currentUser || !currentRoomId) {
-      turnMessage.textContent =
-        "ゲーム情報を確認できません";
-  
-      return;
-    }
-  
-    try {
-      rollDiceButton.disabled = true;
-      rollDiceButton.textContent =
-        "振っています...";
-  
-      /*
-       * ユーザー操作直後なので、
-       * 自分側の効果音を開始しやすい
-       */
-      playDiceSound();
-  
-      await rollDice({
-        roomId: currentRoomId,
-        userId: currentUser.uid
-      });
-    } catch (error) {
-      console.error(
-        "サイコロ処理エラー:",
-        error
-      );
-  
-      turnMessage.textContent =
-        error.message ||
-        "サイコロを振れませんでした";
-  
-      renderGameScreen();
-    }
-  }
+        turnMessage.textContent =
+            "ゲーム情報を確認できません";
 
-  async function handleToggleDiceKeep(index) {
+        return;
+    }
+
+    try {
+        rollDiceButton.disabled = true;
+        rollDiceButton.textContent =
+            "振っています...";
+
+        /*
+         * ユーザー操作直後なので、
+         * 自分側の効果音を開始しやすい
+         */
+        playDiceSound();
+
+        await rollDice({
+            roomId: currentRoomId,
+            userId: currentUser.uid
+        });
+    } catch (error) {
+        console.error(
+            "サイコロ処理エラー:",
+            error
+        );
+
+        turnMessage.textContent =
+            error.message ||
+            "サイコロを振れませんでした";
+
+        renderGameScreen();
+    }
+}
+
+async function handleToggleDiceKeep(index) {
     if (
-      !currentUser ||
-      !currentRoomId ||
-      isDiceAnimating
+        !currentUser ||
+        !currentRoomId ||
+        isDiceAnimating
     ) {
-      return;
+        return;
     }
-  
-    try {
-      await toggleDiceKeep({
-        roomId: currentRoomId,
-        userId: currentUser.uid,
-        diceIndex: index
-      });
-    } catch (error) {
-      console.error(
-        "サイコロキープエラー:",
-        error
-      );
-  
-      turnMessage.textContent =
-        error.message ||
-        "キープ状態を変更できませんでした";
-    }
-  }
 
-  async function animateDiceRoll(finalDice) {
-    if (isDiceAnimating) {
-      return;
+    try {
+        await toggleDiceKeep({
+            roomId: currentRoomId,
+            userId: currentUser.uid,
+            diceIndex: index
+        });
+    } catch (error) {
+        console.error(
+            "サイコロキープエラー:",
+            error
+        );
+
+        turnMessage.textContent =
+            error.message ||
+            "キープ状態を変更できませんでした";
     }
-  
+}
+
+async function animateDiceRoll(finalDice) {
+    if (isDiceAnimating) {
+        return;
+    }
+
     isDiceAnimating = true;
-  
+
     rollDiceButton.disabled = true;
-  
+
     const wasRolledByMe =
-    currentRoom.lastRolledBy ===
-    currentUser?.uid;
+        currentRoom.lastRolledBy ===
+        currentUser?.uid;
 
     if (!wasRolledByMe) {
         playDiceSound();
     }
-  
+
     const keptDice =
-      Array.isArray(currentRoom.keptDice)
-        ? currentRoom.keptDice
-        : [false, false, false, false, false];
-  
+        Array.isArray(currentRoom.keptDice)
+            ? currentRoom.keptDice
+            : [false, false, false, false, false];
+
     diceElements.forEach(function (
-      diceElement,
-      index
+        diceElement,
+        index
     ) {
-      if (!keptDice[index]) {
-        diceElement.classList.add("rolling");
-      }
+        if (!keptDice[index]) {
+            diceElement.classList.add("rolling");
+        }
     });
-  
+
     const animationDuration = 700;
     const changeInterval = 80;
-  
+
     const intervalId = window.setInterval(
-      function () {
-        diceElements.forEach(function (
-          diceElement,
-          index
-        ) {
-          if (keptDice[index]) {
-            return;
-          }
-  
-          const randomValue =
-            Math.floor(Math.random() * 6) + 1;
-  
-          renderDiceFace(
-            diceElement,
-            randomValue
-          );
-        });
-      },
-      changeInterval
+        function () {
+            diceElements.forEach(function (
+                diceElement,
+                index
+            ) {
+                if (keptDice[index]) {
+                    return;
+                }
+
+                const randomValue =
+                    Math.floor(Math.random() * 6) + 1;
+
+                renderDiceFace(
+                    diceElement,
+                    randomValue
+                );
+            });
+        },
+        changeInterval
     );
-  
+
     await wait(animationDuration);
-  
+
     window.clearInterval(intervalId);
-  
+
     diceElements.forEach(function (
-      diceElement,
-      index
-    ) {
-      renderDiceFace(
         diceElement,
-        finalDice[index] ?? 1
-      );
-  
-      diceElement.classList.remove("rolling");
-  
-      if (!keptDice[index]) {
-        diceElement.classList.add("landed");
-  
-        window.setTimeout(function () {
-          diceElement.classList.remove("landed");
-        }, 250);
-      }
+        index
+    ) {
+        renderDiceFace(
+            diceElement,
+            finalDice[index] ?? 1
+        );
+
+        diceElement.classList.remove("rolling");
+
+        if (!keptDice[index]) {
+            diceElement.classList.add("landed");
+
+            window.setTimeout(function () {
+                diceElement.classList.remove("landed");
+            }, 250);
+        }
     });
-  
+
     isDiceAnimating = false;
-  
+
     renderGameScreen();
-  }
-  
-  function wait(milliseconds) {
+}
+
+function wait(milliseconds) {
     return new Promise(function (resolve) {
-      window.setTimeout(resolve, milliseconds);
+        window.setTimeout(resolve, milliseconds);
     });
-  }
-  
-  function playDiceSound() {
+}
+
+function playDiceSound() {
     if (!diceRollSound) {
-      return;
+        return;
     }
-  
+
     diceRollSound.pause();
     diceRollSound.currentTime = 0;
-  
-    const playPromise =
-      diceRollSound.play();
-  
-    if (playPromise) {
-      playPromise.catch(function (error) {
-        console.debug(
-          "サイコロ音を再生できませんでした:",
-          error
-        );
-      });
-    }
-  }
 
-  function renderScoreBoard({
+    const playPromise =
+        diceRollSound.play();
+
+    if (playPromise) {
+        playPromise.catch(function (error) {
+            console.debug(
+                "サイコロ音を再生できませんでした:",
+                error
+            );
+        });
+    }
+}
+
+function renderScoreBoard({
     dice,
     isMyTurn,
     hasRolled
-  }) {
+}) {
     if (!hasRolled) {
-      scoreHelp.textContent =
-        "最初にサイコロを振ってください";
-  
-      scoreBoard.innerHTML =
-        SCORE_CATEGORIES
-          .map(function (category) {
-            return createScoreRowHtml({
-              category,
-              score: null,
-              disabled: true
-            });
-          })
-          .join("");
-  
-      return;
+        scoreHelp.textContent =
+            "最初にサイコロを振ってください";
+
+        scoreBoard.innerHTML =
+            SCORE_CATEGORIES
+                .map(function (category) {
+                    const confirmedScore =
+                        confirmedScores?.[category.key];
+
+                    const isConfirmed =
+                        confirmedScore !== undefined &&
+                        confirmedScore !== null;
+
+                    return createScoreRowHtml({
+                        category,
+                        score: isConfirmed
+                            ? confirmedScore
+                            : null,
+
+                        disabled: true,
+                        isConfirmed
+                    });
+                })
+                .join("");
+
+        return;
     }
-  
+
     let candidates;
-  
+
     try {
-      candidates =
-        calculateScoreCandidates(dice);
+        candidates =
+            calculateScoreCandidates(dice);
     } catch (error) {
-      console.error(
-        "得点計算エラー:",
-        error
-      );
-  
-      scoreHelp.textContent =
-        "得点を計算できませんでした";
-  
-      return;
+        console.error(
+            "得点計算エラー:",
+            error
+        );
+
+        scoreHelp.textContent =
+            "得点を計算できませんでした";
+
+        return;
     }
-  
+
     scoreHelp.textContent = isMyTurn
-      ? "現在の出目で獲得できる得点です"
-      : "手番プレイヤーの得点候補です";
-  
+        ? "現在の出目で獲得できる得点です"
+        : "手番プレイヤーの得点候補です";
+
     scoreBoard.innerHTML =
-      SCORE_CATEGORIES
-        .map(function (category) {
-          return createScoreRowHtml({
-            category,
-            score: candidates[category.key],
-            disabled:
-              !isMyTurn ||
-              isDiceAnimating
-          });
-        })
-        .join("");
-  }
-  
-  function createScoreRowHtml({
+        SCORE_CATEGORIES
+            .map(function (category) {
+                return createScoreRowHtml({
+                    category,
+                    score: candidates[category.key],
+                    disabled:
+                        !isMyTurn ||
+                        isDiceAnimating
+                });
+            })
+            .join("");
+}
+
+function createScoreRowHtml({
     category,
     score,
-    disabled
-  }) {
+    disabled,
+    isConfirmed = false
+}) {
     const scoreText =
-      score === null
-        ? "-"
-        : `${score}点`;
-  
+        score === null
+            ? "-"
+            : `${score}点`;
+
     const sectionClass =
-      category.section === "number"
-        ? "number-score"
-        : "combination-score";
-  
+        category.section === "number"
+            ? "number-score"
+            : "combination-score";
+
     return `
       <button
         type="button"
@@ -955,6 +1063,7 @@ import {
         ${disabled ? "disabled" : ""}
       >
         <span class="score-name">
+          ${isConfirmed ? "✓ " : ""}
           ${escapeHtml(category.label)}
         </span>
   
@@ -963,4 +1072,186 @@ import {
         </span>
       </button>
     `;
-  }
+}
+
+function handleScoreBoardClick(event) {
+    const scoreRow =
+        event.target.closest(".score-row");
+
+    if (
+        !scoreRow ||
+        scoreRow.disabled ||
+        isDiceAnimating ||
+        isScoreConfirming
+    ) {
+        return;
+    }
+
+    const categoryKey =
+        scoreRow.dataset.category;
+
+    const category =
+        SCORE_CATEGORIES.find(function (item) {
+            return item.key === categoryKey;
+        });
+
+    if (!category) {
+        return;
+    }
+
+    const dice = currentRoom?.dice;
+
+    if (!Array.isArray(dice)) {
+        return;
+    }
+
+    const candidates =
+        calculateScoreCandidates(dice);
+
+    const score =
+        candidates[categoryKey];
+
+    pendingScoreCategory = {
+        key: categoryKey,
+        label: category.label,
+        score
+    };
+
+    confirmCategoryName.textContent =
+        category.label;
+
+    confirmScoreValue.textContent =
+        `${score}点`;
+
+    scoreConfirmModal.classList.remove("hidden");
+}
+
+function closeScoreConfirmModal() {
+    if (isScoreConfirming) {
+        return;
+    }
+
+    pendingScoreCategory = null;
+    scoreConfirmModal.classList.add("hidden");
+}
+
+async function handleConfirmScore() {
+    if (
+        !pendingScoreCategory ||
+        !currentUser ||
+        !currentRoomId ||
+        isScoreConfirming
+    ) {
+        return;
+    }
+
+    try {
+        isScoreConfirming = true;
+
+        confirmScoreButton.disabled = true;
+        cancelScoreButton.disabled = true;
+
+        confirmScoreButton.textContent =
+            "確定しています...";
+
+        await confirmScore({
+            roomId: currentRoomId,
+            userId: currentUser.uid,
+            categoryKey:
+                pendingScoreCategory.key
+        });
+
+        scoreConfirmModal.classList.add("hidden");
+        pendingScoreCategory = null;
+    } catch (error) {
+        console.error(
+            "得点確定エラー:",
+            error
+        );
+
+        turnMessage.textContent =
+            error.message ||
+            "得点を確定できませんでした";
+    } finally {
+        isScoreConfirming = false;
+
+        confirmScoreButton.disabled = false;
+        cancelScoreButton.disabled = false;
+
+        confirmScoreButton.textContent =
+            "確定する";
+    }
+}
+
+async function showScoreEffect({
+    playerId,
+    categoryKey,
+    score
+}) {
+    if (isScoreEffectPlaying) {
+        return;
+    }
+
+    const player =
+        currentPlayers.find(function (item) {
+            return item.id === playerId;
+        });
+
+    const category =
+        SCORE_CATEGORIES.find(function (item) {
+            return item.key === categoryKey;
+        });
+
+    if (!category) {
+        return;
+    }
+
+    isScoreEffectPlaying = true;
+
+    const specialEffect =
+        SCORE_EFFECTS[categoryKey];
+
+    const useSpecialEffect =
+        specialEffect &&
+        score >= specialEffect.minScore;
+
+    scoreEffect.className =
+        "score-effect";
+
+    if (useSpecialEffect) {
+        scoreEffect.classList.add(
+            specialEffect.className
+        );
+
+        scoreEffectTitle.textContent =
+            specialEffect.title;
+    } else {
+        scoreEffect.classList.add(
+            "effect-normal"
+        );
+
+        scoreEffectTitle.textContent =
+            category.label;
+    }
+
+    scoreEffectPlayer.textContent =
+        player
+            ? `${player.name} が獲得！`
+            : "得点獲得！";
+
+    scoreEffectValue.textContent =
+        `${score} POINTS`;
+
+    scoreEffect.classList.remove("hidden");
+
+    const duration =
+        useSpecialEffect
+            ? specialEffect.duration
+            : 900;
+
+    await wait(duration);
+
+    scoreEffect.classList.add("hidden");
+
+    isScoreEffectPlaying = false;
+}

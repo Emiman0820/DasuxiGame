@@ -183,6 +183,44 @@
 
   </main>
 
+  <!-- 得点確定モーダル -->
+  <div id="scoreConfirmModal" class="modal hidden">
+    <div class="modal-content">
+      <h2>得点を確定しますか？</h2>
+  
+      <p id="confirmCategoryName" class="confirm-category">
+        フルハウス
+      </p>
+  
+      <p id="confirmScoreValue" class="confirm-score">
+        25点
+      </p>
+  
+      <p class="confirm-warning">
+        確定後は取り消せません
+      </p>
+  
+      <div class="modal-buttons">
+        <button id="cancelScoreButton" type="button">
+          キャンセル
+        </button>
+  
+        <button id="confirmScoreButton" type="button">
+          確定する
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 得点演出 -->
+  <div id="scoreEffect" class="score-effect hidden">
+    <div class="score-effect-content">
+      <p id="scoreEffectPlayer"></p>
+      <h2 id="scoreEffectTitle">YACHT!!</h2>
+      <p id="scoreEffectValue">50 POINTS</p>
+    </div>
+  </div>
+
   <audio id="diceRollSound" src="./sounds/dice-roll.mp3" preload="auto"></audio>
   <script type="module" src="./js/main.js"></script>
 </body>

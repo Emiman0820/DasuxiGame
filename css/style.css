@@ -595,3 +595,217 @@
       padding: 11px 12px;
     }
   }
+
+  .modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+  
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  
+    padding: 20px;
+  
+    background: rgba(15, 23, 42, 0.75);
+  }
+  
+  .modal.hidden {
+    display: none;
+  }
+  
+  .modal-content {
+    width: min(100%, 420px);
+    padding: 30px;
+  
+    background: white;
+    border-radius: 18px;
+  
+    text-align: center;
+  
+    box-shadow:
+      0 20px 60px rgba(0, 0, 0, 0.35);
+  }
+  
+  .confirm-category {
+    margin: 24px 0 8px;
+  
+    font-size: 24px;
+    font-weight: bold;
+  }
+  
+  .confirm-score {
+    margin: 0;
+  
+    color: #2563eb;
+  
+    font-size: 42px;
+    font-weight: bold;
+  }
+  
+  .confirm-warning {
+    color: #dc2626;
+    font-size: 14px;
+  }
+  
+  .modal-buttons {
+    display: flex;
+    gap: 12px;
+  
+    margin-top: 26px;
+  }
+  
+  .modal-buttons button {
+    flex: 1;
+  }
+  
+  #cancelScoreButton {
+    background: #64748b;
+  }
+  
+  .score-row.confirmed {
+    border-color: #16a34a;
+  
+    background: #dcfce7;
+    color: #166534;
+  }
+  
+  .score-row.confirmed .score-value {
+    color: #166534;
+  }
+  
+  /* 得点演出 */
+  
+  .score-effect {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+  
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  
+    background: rgba(15, 23, 42, 0.82);
+  
+    text-align: center;
+  }
+  
+  .score-effect.hidden {
+    display: none;
+  }
+  
+  .score-effect-content {
+    animation:
+      score-effect-in 0.45s ease-out;
+  }
+  
+  .score-effect h2 {
+    margin: 12px 0;
+  
+    color: white;
+  
+    font-size: clamp(42px, 9vw, 92px);
+    letter-spacing: 5px;
+  
+    text-shadow:
+      0 5px 20px rgba(0, 0, 0, 0.5);
+  }
+  
+  #scoreEffectPlayer {
+    color: white;
+  
+    font-size: 20px;
+    font-weight: bold;
+  }
+  
+  #scoreEffectValue {
+    margin: 0;
+  
+    color: white;
+  
+    font-size: clamp(28px, 5vw, 52px);
+    font-weight: bold;
+  }
+  
+  .effect-yacht {
+    background:
+      radial-gradient(
+        circle,
+        rgba(245, 158, 11, 0.95),
+        rgba(124, 45, 18, 0.95)
+      );
+  
+    animation:
+      yacht-flash 0.35s ease-in-out
+      infinite alternate;
+  }
+  
+  .effect-yacht h2 {
+    color: #fff7cc;
+  
+    text-shadow:
+      0 0 15px #fff,
+      0 0 35px #facc15,
+      0 0 65px #f97316;
+  }
+  
+  .effect-full-house {
+    background:
+      radial-gradient(
+        circle,
+        rgba(37, 99, 235, 0.95),
+        rgba(30, 27, 75, 0.96)
+      );
+  }
+  
+  .effect-large-straight {
+    background:
+      radial-gradient(
+        circle,
+        rgba(22, 163, 74, 0.95),
+        rgba(20, 83, 45, 0.96)
+      );
+  }
+  
+  .effect-four-card {
+    background:
+      radial-gradient(
+        circle,
+        rgba(147, 51, 234, 0.95),
+        rgba(59, 7, 100, 0.96)
+      );
+  }
+  
+  @keyframes score-effect-in {
+    0% {
+      opacity: 0;
+  
+      transform:
+        scale(0.4)
+        rotate(-4deg);
+    }
+  
+    65% {
+      opacity: 1;
+  
+      transform:
+        scale(1.12)
+        rotate(2deg);
+    }
+  
+    100% {
+      transform:
+        scale(1)
+        rotate(0);
+    }
+  }
+  
+  @keyframes yacht-flash {
+    from {
+      filter: brightness(1);
+    }
+  
+    to {
+      filter: brightness(1.25);
+    }
+  }
