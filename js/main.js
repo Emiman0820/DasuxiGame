@@ -654,9 +654,6 @@ function openGameScreen() {
         "game-container-wide"
     );
 
-    gameRoomId.textContent =
-        `ルームID：${currentRoomId}`;
-
     renderGameScreen();
 }
 
