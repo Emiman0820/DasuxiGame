@@ -209,32 +209,6 @@ select {
     font-size: 13px;
 }
 
-#gameRoomId {
-    color: #64748b;
-    font-weight: bold;
-}
-
-#gamePlayerList {
-    margin-top: 30px;
-}
-
-.turn-information {
-    margin: 24px 0;
-    padding: 18px;
-
-    background: #f1f5f9;
-    border-radius: 12px;
-}
-
-.turn-information h2 {
-    margin: 8px 0;
-}
-
-#roundText,
-#turnMessage {
-    margin: 6px 0;
-}
-
 .dice-area {
     display: flex;
     justify-content: center;
@@ -464,15 +438,6 @@ select {
     }
 }
 
-.score-section {
-    margin-top: 36px;
-    padding: 22px;
-
-    background: #f8fafc;
-    border: 1px solid #dbe3ec;
-    border-radius: 16px;
-}
-
 .score-header {
     margin-bottom: 16px;
 }
@@ -487,14 +452,6 @@ select {
     color: #64748b;
 
     font-size: 14px;
-}
-
-.score-board {
-    display: grid;
-    grid-template-columns:
-        repeat(2, minmax(0, 1fr));
-
-    gap: 8px;
 }
 
 .score-row {
@@ -935,26 +892,6 @@ select {
     background: #dcfce7;
 }
 
-@media (max-width: 600px) {
-    .all-score-section {
-        padding: 16px 12px;
-    }
-
-    .all-score-board {
-        min-width: 620px;
-    }
-
-    .all-score-board th,
-    .all-score-board td {
-        padding: 9px 10px;
-    }
-
-    .category-column,
-    .category-name {
-        min-width: 115px;
-    }
-}
-
 .all-score-section {
     margin: 0;
     padding: 20px;
@@ -1076,19 +1013,6 @@ select {
     padding: 28px;
 }
 
-.game-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 24px;
-
-    margin-bottom: 22px;
-}
-
-.game-header h1 {
-    margin-bottom: 6px;
-}
-
 #gameRoomId {
     margin: 0;
 
@@ -1101,31 +1025,13 @@ select {
 /* ================================
      左右2カラム
   ================================ */
-
-.game-layout {
-    display: grid;
-    grid-template-columns:
-        minmax(580px, 1.15fr) minmax(460px, 0.85fr);
-
-    gap: 24px;
-
-    align-items: start;
-}
-
 .game-main-column,
 .game-side-column {
     min-width: 0;
 }
 
-.game-main-column {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
 .game-side-column {
     position: sticky;
-    top: 18px;
 }
 
 
@@ -1199,30 +1105,6 @@ select {
 
     gap: 8px;
 }
-
-
-/* ================================
-     プレイヤー簡易表示
-  ================================ */
-
-.game-player-summary {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: 8px;
-
-    max-width: 55%;
-}
-
-.game-player-summary .player-card {
-    width: auto;
-    min-width: 150px;
-    margin: 0;
-    padding: 8px 12px;
-
-    font-size: 13px;
-}
-
 
 /* ================================
      右側スコアボード
@@ -1372,16 +1254,6 @@ select {
         width: min(94vw, 760px);
     }
 
-    .game-header {
-        flex-direction: column;
-    }
-
-    .game-player-summary {
-        justify-content: flex-start;
-
-        max-width: none;
-    }
-
     .game-layout {
         grid-template-columns: 1fr;
     }
@@ -1401,28 +1273,8 @@ select {
         padding: 16px 10px;
     }
 
-    .game-header {
-        margin-bottom: 14px;
-    }
-
-    .game-header h1 {
-        font-size: 24px;
-    }
-
     .score-board {
         grid-template-columns: 1fr;
-    }
-
-    .game-player-summary {
-        display: grid;
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
-
-        width: 100%;
-    }
-
-    .game-player-summary .player-card {
-        min-width: 0;
     }
 
     .all-score-section,
@@ -1662,68 +1514,67 @@ select {
     height: 100dvh;
     padding: clamp(8px, 1vw, 18px);
     overflow: hidden;
-  }
-  
-  .game-layout {
+}
+
+#gameScreen {
+    height: 100%;
+}
+
+.game-layout {
     display: grid;
-  
+
     grid-template-columns:
-      minmax(0, 1.15fr)
-      minmax(360px, 0.85fr);
-  
+        minmax(0, 1.15fr) minmax(360px, 0.85fr);
+
     gap: clamp(8px, 1.2vw, 20px);
-  
-    height: calc(100dvh - 90px);
+
+    height: 100%;
     min-height: 0;
-  }
-  
-  .game-main-column {
+}
+
+.game-main-column {
     display: grid;
-  
+
     grid-template-rows:
-      auto
-      auto
-      minmax(0, 1fr);
-  
+        auto auto minmax(0, 1fr);
+
     gap: clamp(6px, 1vh, 12px);
-  
+
     min-height: 0;
-  }
-  
-  .dice {
+}
+
+.dice {
     width: clamp(48px, 5vw, 82px);
     height: clamp(48px, 5vw, 82px);
-  }
-  
-  .score-row {
-    padding:
-      clamp(3px, 0.7vh, 9px)
-      clamp(7px, 0.8vw, 14px);
-  
-    font-size: clamp(11px, 0.9vw, 15px);
-  }
-  
-  .all-score-board th,
-  .all-score-board td {
-    padding:
-      clamp(2px, 0.5vh, 8px)
-      clamp(4px, 0.6vw, 10px);
-  
-    font-size: clamp(9px, 0.8vw, 13px);
-  }
+}
 
-  @media (max-width: 1000px) {
+.score-row {
+    padding:
+        clamp(3px, 0.7vh, 9px) clamp(7px, 0.8vw, 14px);
+
+    font-size: clamp(11px, 0.9vw, 15px);
+}
+
+.all-score-board th,
+.all-score-board td {
+    padding:
+        clamp(2px, 0.5vh, 8px) clamp(4px, 0.6vw, 10px);
+
+    font-size: clamp(9px, 0.8vw, 13px);
+}
+
+@media (max-width: 1000px) {
     body {
-      overflow: auto;
+        overflow: auto;
     }
-  
+
     .container.game-container-wide {
-      height: auto;
-      min-height: 100dvh;
+        height: auto;
+        min-height: 100dvh;
     }
-  
+
     .game-layout {
-      grid-template-columns: 1fr;
-      height: auto;
+        grid-template-columns: 1fr;
+        height: auto;
     }
-  }
+}
