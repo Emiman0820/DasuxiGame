@@ -1435,3 +1435,201 @@ select {
         min-width: 520px;
     }
 }
+
+/* ================================
+   結果画面
+================================ */
+
+#resultScreen {
+    width: 100%;
+}
+
+.result-header {
+    margin-bottom: 26px;
+
+    text-align: center;
+}
+
+.result-header h1 {
+    margin: 4px 0 8px;
+
+    font-size: clamp(32px, 5vw, 54px);
+}
+
+.result-subtitle {
+    margin: 0;
+
+    color: #64748b;
+
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 5px;
+}
+
+#resultRoomId {
+    margin: 0;
+
+    color: #64748b;
+    font-size: 13px;
+}
+
+.winner-display {
+    margin-bottom: 28px;
+    padding: 28px;
+
+    background:
+        radial-gradient(circle at top,
+            #fef3c7,
+            #f59e0b);
+
+    border: 3px solid #fbbf24;
+    border-radius: 20px;
+
+    text-align: center;
+
+    box-shadow:
+        0 18px 40px rgba(245, 158, 11, 0.3);
+}
+
+.winner-label {
+    margin: 0 0 8px;
+
+    color: #92400e;
+
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 5px;
+}
+
+#winnerName {
+    margin: 0;
+
+    color: #78350f;
+
+    font-size: clamp(34px, 6vw, 64px);
+}
+
+#winnerScore {
+    margin: 8px 0 0;
+
+    color: #92400e;
+
+    font-size: 26px;
+    font-weight: bold;
+}
+
+.result-ranking {
+    display: grid;
+    gap: 12px;
+
+    margin-bottom: 28px;
+}
+
+.result-player-card {
+    display: grid;
+    grid-template-columns:
+        80px minmax(0, 1fr) auto;
+
+    align-items: center;
+    gap: 16px;
+
+    padding: 16px 20px;
+
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 14px;
+}
+
+.result-rank {
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.result-player-information h3 {
+    margin: 0;
+
+    font-size: 19px;
+}
+
+.result-player-information h3 span {
+    display: inline-block;
+
+    margin-left: 8px;
+    padding: 3px 8px;
+
+    border-radius: 999px;
+
+    background: #2563eb;
+    color: white;
+
+    font-size: 11px;
+}
+
+.result-player-score {
+    color: #1d4ed8;
+
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.result-player-card.rank-first {
+    border-color: #f59e0b;
+    background: #fffbeb;
+}
+
+.result-player-card.rank-second {
+    border-color: #94a3b8;
+    background: #f8fafc;
+}
+
+.result-player-card.rank-third {
+    border-color: #b45309;
+    background: #fff7ed;
+}
+
+.result-player-card.result-own-player {
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.result-score-section {
+    padding: 20px;
+
+    background: #f8fafc;
+    border: 1px solid #dbe3ec;
+    border-radius: 16px;
+}
+
+.result-score-section h2 {
+    margin-top: 0;
+}
+
+.result-score-scroll {
+    overflow: auto;
+
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+}
+
+#returnHomeButton {
+    width: 100%;
+    margin-top: 24px;
+    padding: 16px;
+
+    font-size: 17px;
+}
+
+@media (max-width: 650px) {
+    .result-player-card {
+        grid-template-columns:
+            58px minmax(0, 1fr);
+
+        gap: 10px;
+    }
+
+    .result-player-score {
+        grid-column: 2;
+
+        font-size: 20px;
+    }
+}

@@ -165,6 +165,27 @@ const allScoreBoard =
 const appContainer =
     document.querySelector(".container");
 
+const resultScreen =
+    document.getElementById("resultScreen");
+
+const resultRoomId =
+    document.getElementById("resultRoomId");
+
+const winnerName =
+    document.getElementById("winnerName");
+
+const winnerScore =
+    document.getElementById("winnerScore");
+
+const resultRanking =
+    document.getElementById("resultRanking");
+
+const resultScoreBoard =
+    document.getElementById("resultScoreBoard");
+
+const returnHomeButton =
+    document.getElementById("returnHomeButton");
+
 const DICE_PIP_POSITIONS = {
     1: ["center"],
 
@@ -308,6 +329,11 @@ cancelScoreButton.addEventListener(
 confirmScoreButton.addEventListener(
     "click",
     handleConfirmScore
+);
+
+returnHomeButton.addEventListener(
+    "click",
+    handleReturnHome
 );
 
 diceElements.forEach(function (
@@ -493,6 +519,11 @@ function renderWaitingRoom() {
             renderGameScreen();
         }
 
+        return;
+    }
+
+    if (currentRoom.status === "finished") {
+        openResultScreen();
         return;
     }
 
@@ -1311,28 +1342,27 @@ function renderAllPlayerScores(currentPlayerIndex) {
           </th>
 
           ${currentPlayers
-              .map(function (player, index) {
-                  const isCurrent =
-                      index === currentPlayerIndex;
+            .map(function (player, index) {
+                const isCurrent =
+                    index === currentPlayerIndex;
 
-                  return `
+                return `
                     <th class="
                       score-player-header
                       ${isCurrent ? "current-score-player" : ""}
                     ">
                       ${escapeHtml(player.name)}
 
-                      ${
-                          isCurrent
-                              ? `<span class="score-turn-mark">
+                      ${isCurrent
+                        ? `<span class="score-turn-mark">
                                    手番
                                  </span>`
-                              : ""
-                      }
+                        : ""
+                    }
                     </th>
                   `;
-              })
-              .join("")}
+            })
+            .join("")}
         </tr>
       </thead>
     `;
@@ -1350,7 +1380,7 @@ function renderAllPlayerScores(currentPlayerIndex) {
                         .map(function (player, index) {
                             const score =
                                 player.scores?.[
-                                    category.key
+                                category.key
                                 ];
 
                             const isConfirmed =
@@ -1366,10 +1396,9 @@ function renderAllPlayerScores(currentPlayerIndex) {
                                 ${isCurrent ? "current-score-player" : ""}
                                 ${isConfirmed ? "" : "score-empty"}
                               ">
-                                ${
-                                    isConfirmed
-                                        ? score
-                                        : "－"
+                                ${isConfirmed
+                                    ? score
+                                    : "－"
                                 }
                               </td>
                             `;
@@ -1435,4 +1464,261 @@ function calculateConfirmedTotal(scores) {
         },
         0
     );
+}
+
+function openResultScreen() {
+    homeScreen.classList.add("hidden");
+    waitingRoomScreen.classList.add("hidden");
+    gameScreen.classList.add("hidden");
+
+    resultScreen.classList.remove("hidden");
+
+    appContainer.classList.add(
+        "game-container-wide"
+    );
+
+    resultRoomId.textContent =
+        `ルームID：${currentRoomId}`;
+
+    renderResultScreen();
+}
+
+function createRanking(players) {
+    const sortedPlayers = players
+        .map(function (player) {
+            return {
+                ...player,
+                totalScore:
+                    calculateConfirmedTotal(
+                        player.scores
+                    )
+            };
+        })
+        .sort(function (a, b) {
+            return b.totalScore - a.totalScore;
+        });
+
+    let previousScore = null;
+    let previousRank = 0;
+
+    return sortedPlayers.map(
+        function (player, index) {
+            let rank;
+
+            if (
+                previousScore !== null &&
+                player.totalScore === previousScore
+            ) {
+                rank = previousRank;
+            } else {
+                rank = index + 1;
+            }
+
+            previousScore = player.totalScore;
+            previousRank = rank;
+
+            return {
+                ...player,
+                rank
+            };
+        }
+    );
+}
+
+function renderResultScreen() {
+    const ranking =
+        createRanking(currentPlayers);
+
+    if (ranking.length === 0) {
+        winnerName.textContent =
+            "結果を取得できません";
+
+        winnerScore.textContent = "";
+        resultRanking.innerHTML = "";
+        return;
+    }
+
+    const winners = ranking.filter(
+        function (player) {
+            return player.rank === 1;
+        }
+    );
+
+    if (winners.length === 1) {
+        winnerName.textContent =
+            winners[0].name;
+
+        winnerScore.textContent =
+            `${winners[0].totalScore}点`;
+    } else {
+        winnerName.textContent =
+            winners
+                .map(function (player) {
+                    return player.name;
+                })
+                .join("・");
+
+        winnerScore.textContent =
+            `${winners[0].totalScore}点で同率優勝`;
+    }
+
+    resultRanking.innerHTML = ranking
+        .map(function (player) {
+            const isMe =
+                player.id === currentUser?.uid;
+
+            const rankClass =
+                player.rank === 1
+                    ? "rank-first"
+                    : player.rank === 2
+                      ? "rank-second"
+                      : player.rank === 3
+                        ? "rank-third"
+                        : "";
+
+            return `
+              <article class="
+                result-player-card
+                ${rankClass}
+                ${isMe ? "result-own-player" : ""}
+              ">
+                <div class="result-rank">
+                    ${player.rank}位
+                </div>
+
+                <div class="result-player-information">
+                    <h3>
+                        ${escapeHtml(player.name)}
+                        ${isMe ? `<span>あなた</span>` : ""}
+                    </h3>
+                </div>
+
+                <div class="result-player-score">
+                    ${player.totalScore}点
+                </div>
+              </article>
+            `;
+        })
+        .join("");
+
+    renderResultScoreBoard(ranking);
+}
+
+function renderResultScoreBoard(ranking) {
+    if (!resultScoreBoard) {
+        return;
+    }
+
+    const headerHtml = `
+      <thead>
+        <tr>
+          <th class="score-category-header">
+            役
+          </th>
+
+          ${ranking
+              .map(function (player) {
+                  return `
+                    <th class="score-player-header">
+                      ${escapeHtml(player.name)}
+                    </th>
+                  `;
+              })
+              .join("")}
+        </tr>
+      </thead>
+    `;
+
+    const categoryRowsHtml =
+        SCORE_CATEGORIES
+            .map(function (category) {
+                return `
+                  <tr>
+                    <th class="score-category-name">
+                      ${escapeHtml(category.label)}
+                    </th>
+
+                    ${ranking
+                        .map(function (player) {
+                            const score =
+                                player.scores?.[
+                                    category.key
+                                ];
+
+                            return `
+                              <td class="score-player-value">
+                                ${
+                                    typeof score === "number"
+                                        ? score
+                                        : "－"
+                                }
+                              </td>
+                            `;
+                        })
+                        .join("")}
+                  </tr>
+                `;
+            })
+            .join("");
+
+    const totalRowHtml = `
+      <tr class="score-total-row">
+        <th class="score-category-name">
+          合計
+        </th>
+
+        ${ranking
+            .map(function (player) {
+                return `
+                  <td class="score-total-value">
+                    ${player.totalScore}
+                  </td>
+                `;
+            })
+            .join("")}
+      </tr>
+    `;
+
+    resultScoreBoard.innerHTML = `
+      ${headerHtml}
+
+      <tbody>
+        ${categoryRowsHtml}
+        ${totalRowHtml}
+      </tbody>
+    `;
+}
+
+function handleReturnHome() {
+    stopRoomListeners();
+
+    currentRoomId = null;
+    currentRoom = null;
+    currentPlayers = [];
+
+    displayedRollNumber = 0;
+    displayedScoreEventNumber = 0;
+
+    pendingScoreCategory = null;
+
+    resultScreen.classList.add("hidden");
+    gameScreen.classList.add("hidden");
+    waitingRoomScreen.classList.add("hidden");
+
+    homeScreen.classList.remove("hidden");
+
+    appContainer.classList.remove(
+        "game-container-wide"
+    );
+
+    playerNameInput.value = "";
+    roomIdInput.value = "";
+
+    message.textContent = "";
+
+    createRoomButton.disabled =
+        !currentUser;
+
+    joinRoomButton.disabled =
+        !currentUser;
 }

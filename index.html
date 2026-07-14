@@ -172,6 +172,47 @@
             </div>
         </section>
 
+        <!-- 結果画面 -->
+        <section id="resultScreen" class="hidden">
+            <header class="result-header">
+                <p class="result-subtitle">
+                    GAME RESULT
+                </p>
+
+                <h1>最終結果</h1>
+
+                <p id="resultRoomId"></p>
+            </header>
+
+            <div id="winnerDisplay" class="winner-display">
+                <p class="winner-label">
+                    WINNER
+                </p>
+
+                <h2 id="winnerName">
+                    Player 1
+                </h2>
+
+                <p id="winnerScore">
+                    120点
+                </p>
+            </div>
+
+            <div id="resultRanking" class="result-ranking"></div>
+
+            <section class="result-score-section">
+                <h2>最終スコア</h2>
+
+                <div class="result-score-scroll">
+                    <table id="resultScoreBoard" class="all-score-board"></table>
+                </div>
+            </section>
+
+            <button id="returnHomeButton" type="button">
+                タイトルへ戻る
+            </button>
+        </section>
+
     </main>
 
     <!-- 得点確定モーダル -->
