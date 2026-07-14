@@ -102,12 +102,6 @@ const startGameButton =
 const gameScreen =
     document.getElementById("gameScreen");
 
-const gameRoomId =
-    document.getElementById("gameRoomId");
-
-const gamePlayerList =
-    document.getElementById("gamePlayerList");
-
 const roundText =
     document.getElementById("roundText");
 
@@ -803,36 +797,6 @@ function renderGameScreen() {
         hasRolled,
         confirmedScores
     });
-
-    gamePlayerList.innerHTML = currentPlayers
-        .map(function (player, index) {
-            const isCurrent =
-                index === currentPlayerIndex;
-
-            const turnLabel = isCurrent
-                ? `<span class="turn-label">手番</span>`
-                : "";
-
-            const ownLabel =
-                player.id === currentUser?.uid
-                    ? `<span class="own-label">あなた</span>`
-                    : "";
-
-            return `
-          <div class="player-card">
-            <span>
-              ${index + 1}.
-              ${escapeHtml(player.name)}
-            </span>
-
-            <span class="player-labels">
-              ${ownLabel}
-              ${turnLabel}
-            </span>
-          </div>
-        `;
-        })
-        .join("");
 
     renderAllPlayerScores(
         currentPlayerIndex
