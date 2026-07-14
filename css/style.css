@@ -1656,3 +1656,74 @@ select {
 .score-total-row td {
     border-top: 3px solid #60a5fa;
 }
+
+.container.game-container-wide {
+    width: 100vw;
+    height: 100dvh;
+    padding: clamp(8px, 1vw, 18px);
+    overflow: hidden;
+  }
+  
+  .game-layout {
+    display: grid;
+  
+    grid-template-columns:
+      minmax(0, 1.15fr)
+      minmax(360px, 0.85fr);
+  
+    gap: clamp(8px, 1.2vw, 20px);
+  
+    height: calc(100dvh - 90px);
+    min-height: 0;
+  }
+  
+  .game-main-column {
+    display: grid;
+  
+    grid-template-rows:
+      auto
+      auto
+      minmax(0, 1fr);
+  
+    gap: clamp(6px, 1vh, 12px);
+  
+    min-height: 0;
+  }
+  
+  .dice {
+    width: clamp(48px, 5vw, 82px);
+    height: clamp(48px, 5vw, 82px);
+  }
+  
+  .score-row {
+    padding:
+      clamp(3px, 0.7vh, 9px)
+      clamp(7px, 0.8vw, 14px);
+  
+    font-size: clamp(11px, 0.9vw, 15px);
+  }
+  
+  .all-score-board th,
+  .all-score-board td {
+    padding:
+      clamp(2px, 0.5vh, 8px)
+      clamp(4px, 0.6vw, 10px);
+  
+    font-size: clamp(9px, 0.8vw, 13px);
+  }
+
+  @media (max-width: 1000px) {
+    body {
+      overflow: auto;
+    }
+  
+    .container.game-container-wide {
+      height: auto;
+      min-height: 100dvh;
+    }
+  
+    .game-layout {
+      grid-template-columns: 1fr;
+      height: auto;
+    }
+  }
